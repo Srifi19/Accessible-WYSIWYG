@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WYSIWYG Editor - Fully Accessible</title>
+    <meta name="description" content="A fully accessible WYSIWYG text editor with keyboard navigation">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="editor-container">
+        <h1>Accessible WYSIWYG Editor</h1>
+        
+        <div class="editor-wrapper">
+            <!-- Toolbar -->
+            <div class="toolbar" role="toolbar" aria-label="Text formatting toolbar" tabindex="0">
+                <button type="button" class="toolbar-btn" data-command="h2" aria-label="Heading 2" title="Heading 2">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 12h8m-8-6v12m8-12v12m4 0h4m-4-6h4m-4 6V6"></path>
+                        <text x="16" y="18" font-size="10" font-weight="bold" fill="currentColor">2</text>
+                    </svg>
+                </button>
+                
+                <button type="button" class="toolbar-btn" data-command="h3" aria-label="Heading 3" title="Heading 3">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 12h8m-8-6v12m8-12v12m4 0h4m-4-6h4m-4 6V6"></path>
+                        <text x="16" y="18" font-size="10" font-weight="bold" fill="currentColor">3</text>
+                    </svg>
+                </button>
+                
+                <button type="button" class="toolbar-btn" data-command="bold" aria-label="Bold" title="Bold (Ctrl+B)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
+                        <path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
+                    </svg>
+                </button>
+                
+                <button type="button" class="toolbar-btn" data-command="italic" aria-label="Italic" title="Italic (Ctrl+I)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="19" y1="4" x2="10" y2="4"></line>
+                        <line x1="14" y1="20" x2="5" y2="20"></line>
+                        <line x1="15" y1="4" x2="9" y2="20"></line>
+                    </svg>
+                </button>
+                
+                <button type="button" class="toolbar-btn" data-command="underline" aria-label="Underline" title="Underline (Ctrl+U)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"></path>
+                        <line x1="4" y1="21" x2="20" y2="21"></line>
+                    </svg>
+                </button>
+                
+                <button type="button" class="toolbar-btn" data-command="insertUnorderedList" aria-label="Bullet list" title="Bullet list">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="9" y1="6" x2="20" y2="6"></line>
+                        <line x1="9" y1="12" x2="20" y2="12"></line>
+                        <line x1="9" y1="18" x2="20" y2="18"></line>
+                        <circle cx="4" cy="6" r="1" fill="currentColor"></circle>
+                        <circle cx="4" cy="12" r="1" fill="currentColor"></circle>
+                        <circle cx="4" cy="18" r="1" fill="currentColor"></circle>
+                    </svg>
+                </button>
+                
+                <button type="button" class="toolbar-btn" data-command="insertOrderedList" aria-label="Numbered list" title="Numbered list">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="10" y1="6" x2="21" y2="6"></line>
+                        <line x1="10" y1="12" x2="21" y2="12"></line>
+                        <line x1="10" y1="18" x2="21" y2="18"></line>
+                        <text x="3" y="8" font-size="8" fill="currentColor">1.</text>
+                        <text x="3" y="14" font-size="8" fill="currentColor">2.</text>
+                        <text x="3" y="20" font-size="8" fill="currentColor">3.</text>
+                    </svg>
+                </button>
+                
+                <button type="button" class="toolbar-btn" data-command="createLink" aria-label="Insert link" title="Insert link">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                </button>
+                
+                <button type="button" class="toolbar-btn" data-command="indent" aria-label="Indent" title="Indent">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="9" y1="12" x2="21" y2="12"></line>
+                        <line x1="9" y1="18" x2="21" y2="18"></line>
+                        <polyline points="3 12 6 15 3 18"></polyline>
+                    </svg>
+                </button>
+                
+                <button type="button" class="toolbar-btn" data-command="outdent" aria-label="Outdent" title="Outdent">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="9" y1="12" x2="21" y2="12"></line>
+                        <line x1="9" y1="18" x2="21" y2="18"></line>
+                        <polyline points="6 12 3 15 6 18"></polyline>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Editor Area -->
+            <div 
+                class="editor-content" 
+                contenteditable="true" 
+                role="textbox" 
+                aria-multiline="true"
+                aria-label="Text editor"
+                tabindex="0"
+                spellcheck="true"
+            >
+                <p>Start typing here...</p>
+            </div>
+        </div>
+        
+        <!-- Link Popup Modal -->
+        <div class="link-popup" role="dialog" aria-labelledby="link-popup-title" aria-modal="true" hidden>
+            <div class="link-popup-content">
+                <h2 id="link-popup-title">Insert Link</h2>
+                <label for="link-url-input">URL:</label>
+                <input 
+                    type="url" 
+                    id="link-url-input" 
+                    placeholder="https://example.com"
+                    aria-required="true"
+                />
+                <div class="link-popup-buttons">
+                    <button type="button" class="link-popup-btn link-popup-cancel">Cancel</button>
+                    <button type="button" class="link-popup-btn link-popup-apply">Apply</button>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script src="main.js"></script>
+</body>
+</html>
