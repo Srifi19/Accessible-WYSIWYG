@@ -26,7 +26,8 @@ const CSS = /* css */ `
 /* ---- Outer wrapper ---- */
 .wysiwyg-container {
   background: #fff;
-  border: 1px solid #d1d1d1;
+  /* 37652: border was #d1d1d1 (~1.6:1 on white) — now #767676 (4.5:1) */
+  border: 2px solid #767676;
   border-radius: 4px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,.10);
@@ -39,7 +40,7 @@ const CSS = /* css */ `
   gap: 2px;
   padding: 8px;
   background: #fafafa;
-  border-bottom: 1px solid #d1d1d1;
+  border-bottom: 2px solid #767676;
   flex-wrap: wrap;
 }
 
@@ -59,7 +60,7 @@ const CSS = /* css */ `
 }
 .wysiwyg-toolbar-btn:hover {
   background: #e8e8e8;
-  border-color: #c1c1c1;
+  border-color: #767676;
 }
 .wysiwyg-toolbar-btn:focus {
   outline: 2px solid #0066cc;
@@ -85,20 +86,18 @@ const CSS = /* css */ `
   pointer-events: none;
 }
 
-/* Bold icon: fill + stroke differ from the generic active rule */
 .wysiwyg-toolbar-btn[data-command="bold"].active svg {
   fill: #fff;
   stroke: #fff;
 }
-
-/* Link / unlink: don't fill the path when active */
 .wysiwyg-toolbar-btn[data-command="link"].active svg,
 .wysiwyg-toolbar-btn[data-command="unlink"].active svg {
   fill: none;
   stroke: #fff;
 }
 
-/* ---- ProseMirror surface ---- */
+/* ---- ProseMirror / Tiptap surface ---- */
+.wysiwyg-container .tiptap,
 .wysiwyg-container .ProseMirror {
   min-height: 400px;
   max-height: 600px;
@@ -109,53 +108,55 @@ const CSS = /* css */ `
   overflow-y: auto;
   font-family: sans-serif;
 }
+.wysiwyg-container .tiptap:focus,
 .wysiwyg-container .ProseMirror:focus {
   outline: 2px solid #0066cc;
   outline-offset: -2px;
 }
 
 /* ---- Editor typography ---- */
-.wysiwyg-container .ProseMirror h2 {
+.wysiwyg-container .ProseMirror h2,
+.wysiwyg-container .tiptap h2 {
   font-size: 1.75rem;
   font-weight: 700;
   line-height: 1.3;
 }
-.wysiwyg-container .ProseMirror h3 {
+.wysiwyg-container .ProseMirror h3,
+.wysiwyg-container .tiptap h3 {
   font-size: 1.35rem;
   font-weight: 700;
   line-height: 1.3;
 }
-.wysiwyg-container .ProseMirror p {
+.wysiwyg-container .ProseMirror p,
+.wysiwyg-container .tiptap p {
   margin: 0.5rem 0;
 }
 
 /* ---- Links ---- */
-.wysiwyg-container .ProseMirror a {
+.wysiwyg-container .ProseMirror a,
+.wysiwyg-container .tiptap a {
   color: #0066cc;
   text-decoration: underline;
 }
-.wysiwyg-container .ProseMirror a:hover {
+.wysiwyg-container .ProseMirror a:hover,
+.wysiwyg-container .tiptap a:hover {
   color: #0052a3;
-}
-.wysiwyg-container .ProseMirror h2 a,
-.wysiwyg-container .ProseMirror h3 a {
-  font-size: inherit;
-  font-weight: inherit;
-  line-height: inherit;
-  text-decoration: underline;
 }
 
 /* ---- Lists ---- */
 .wysiwyg-container .ProseMirror ul,
-.wysiwyg-container .ProseMirror ol {
+.wysiwyg-container .ProseMirror ol,
+.wysiwyg-container .tiptap ul,
+.wysiwyg-container .tiptap ol {
   margin: 0.5rem 0;
   padding-left: 2rem;
 }
-.wysiwyg-container .ProseMirror li {
+.wysiwyg-container .ProseMirror li,
+.wysiwyg-container .tiptap li {
   margin: 0.25rem 0;
 }
 
-/* ---- Status (live region) ---- */
+/* ---- Status live region ---- */
 .wysiwyg-status {
   position: absolute !important;
   width: 1px !important;
@@ -168,7 +169,7 @@ const CSS = /* css */ `
   border: 0 !important;
 }
 
-/* ---- Link popup ---- */
+/* ---- Link popup overlay ---- */
 .wysiwyg-link-popup {
   position: fixed;
   inset: 0;
@@ -177,18 +178,23 @@ const CSS = /* css */ `
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  /* 37655: allow scroll on small viewports */
+  overflow-y: auto;
+  padding: 1rem;
 }
 .wysiwyg-link-popup[hidden] {
   display: none;
 }
+
+/* ---- Link popup dialog ---- */
 .wysiwyg-link-popup-content {
   background: #fff;
   padding: 2rem;
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0,0,0,.3);
-  min-width: 400px;
-  max-width: 90%;
-  width: 480px;
+  width: 100%;
+  max-width: 480px;
+  /* 37655: don't constrain height so it reflows at 400% zoom */
 }
 .wysiwyg-link-popup-content h2 {
   font-size: 1.25rem;
@@ -197,75 +203,194 @@ const CSS = /* css */ `
 }
 .wysiwyg-link-popup-content label {
   display: block;
-  margin-bottom: .5rem;
+  margin-bottom: .35rem;
   font-weight: 500;
-  color: #333;
+  color: #1a1a1a;
 }
+
+/* 37656: format hint text under label */
+.wysiwyg-field-hint {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #555;
+  margin-bottom: .35rem;
+}
+
 .wysiwyg-link-popup-content input {
   width: 100%;
   padding: .75rem;
-  border: 1px solid #d1d1d1;
+  /* 37652: input border #d1d1d1 failed — now #767676 */
+  border: 2px solid #767676;
   border-radius: 4px;
   font-size: 1rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: .5rem;
 }
 .wysiwyg-link-popup-content input:focus {
   outline: 2px solid #0066cc;
+  outline-offset: 0;
   border-color: #0066cc;
 }
+
+/* 37653/54: visible error text */
+.wysiwyg-field-error {
+  display: block;
+  color: #cc0000;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: .75rem;
+  /* icon prefix to not rely on color alone */
+}
+.wysiwyg-field-error:not([hidden])::before {
+  content: '⚠ ';
+}
+
 .wysiwyg-input-invalid {
   border-color: #cc0000 !important;
+}
+.wysiwyg-input-invalid:focus {
   outline-color: #cc0000 !important;
 }
+
 .wysiwyg-link-popup-buttons {
   display: flex;
   gap: .75rem;
   justify-content: flex-end;
+  /* 37655: wrap on tiny screens */
+  flex-wrap: wrap;
+  margin-top: 1rem;
 }
 .wysiwyg-link-cancel,
 .wysiwyg-link-apply {
   padding: .6rem 1.25rem;
-  border: 1px solid #d1d1d1;
+  border: 2px solid #767676;
   border-radius: 4px;
   font-size: 1rem;
   cursor: pointer;
   font-weight: 500;
   transition: background .15s;
+  /* 37655: allow buttons to grow on narrow viewports */
+  flex: 1 1 auto;
+  min-width: 80px;
+  text-align: center;
 }
 .wysiwyg-link-cancel {
   background: #fff;
-  color: #333;
+  color: #1a1a1a;
 }
-.wysiwyg-link-cancel:hover  { background: #f5f5f5; }
-.wysiwyg-link-cancel:focus  { outline: 2px solid #0066cc; }
+.wysiwyg-link-cancel:hover  { background: #f0f0f0; }
+.wysiwyg-link-cancel:focus  { outline: 2px solid #0066cc; outline-offset: 2px; }
 .wysiwyg-link-apply {
   background: #0066cc;
   color: #fff;
-  border-color: #0066cc;
+  border-color: #0052a3;
 }
-.wysiwyg-link-apply:hover  { background: #0052a3; border-color: #0052a3; }
+.wysiwyg-link-apply:hover  { background: #0052a3; }
 .wysiwyg-link-apply:focus  { outline: 2px solid #003d7a; outline-offset: 2px; }
 
-/* ---- Body scroll lock (applied by LinkPopup) ---- */
+/* ---- Body scroll lock ---- */
 body.wysiwyg-no-scroll { overflow: hidden; }
 
 /* ---- Responsive ---- */
 @media (max-width: 640px) {
   .wysiwyg-link-popup-content {
-    min-width: auto;
-    width: 92%;
     padding: 1.25rem;
   }
   .wysiwyg-toolbar { padding: 4px; }
   .wysiwyg-toolbar-btn { width: 32px; height: 32px; }
 }
+
+/* ---- Forced colors — Windows High Contrast Mode (37478) ---- */
+@media (forced-colors: active) {
+  .wysiwyg-toolbar {
+    border-bottom: 2px solid ButtonText;
+    background: Canvas;
+  }
+  .wysiwyg-toolbar-btn {
+    border: 2px solid ButtonText;
+    background: ButtonFace;
+    color: ButtonText;
+    forced-color-adjust: none;
+  }
+  .wysiwyg-toolbar-btn:hover {
+    background: Highlight;
+    color: HighlightText;
+    border-color: HighlightText;
+  }
+  .wysiwyg-toolbar-btn:focus {
+    outline: 3px solid Highlight;
+    outline-offset: 1px;
+  }
+  .wysiwyg-toolbar-btn.active {
+    background: Highlight;
+    color: HighlightText;
+    border-color: HighlightText;
+  }
+  /* SVGs inherit system ButtonText color — visible in all HC themes */
+  .wysiwyg-toolbar-btn svg {
+    fill: currentColor;
+    stroke: currentColor;
+  }
+  .wysiwyg-toolbar-btn[data-command="bold"].active svg,
+  .wysiwyg-toolbar-btn[data-command="link"].active svg,
+  .wysiwyg-toolbar-btn[data-command="unlink"].active svg {
+    fill: currentColor;
+    stroke: currentColor;
+  }
+  /* Editor surface */
+  .wysiwyg-container {
+    border-color: ButtonText;
+  }
+  .wysiwyg-container .tiptap,
+  .wysiwyg-container .ProseMirror {
+    background: Canvas;
+    color: CanvasText;
+  }
+  .wysiwyg-container .tiptap:focus,
+  .wysiwyg-container .ProseMirror:focus {
+    outline: 3px solid Highlight;
+  }
+  /* Link popup */
+  .wysiwyg-link-popup {
+    background: Canvas;
+  }
+  .wysiwyg-link-popup-content {
+    border: 2px solid ButtonText;
+    background: Canvas;
+    color: CanvasText;
+    box-shadow: none;
+  }
+  .wysiwyg-link-popup-content input {
+    border: 2px solid ButtonText;
+    background: Field;
+    color: FieldText;
+  }
+  .wysiwyg-link-apply {
+    background: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+  }
+  .wysiwyg-link-cancel {
+    background: ButtonFace;
+    color: ButtonText;
+    border-color: ButtonText;
+  }
+  .wysiwyg-input-invalid {
+    border-color: LinkText !important;
+  }
+  .wysiwyg-field-error {
+    color: LinkText;
+  }
+  .wysiwyg-field-hint {
+    color: CanvasText;
+  }
+}
 `;
 
 export function injectStyles() {
-  if (document.getElementById(STYLE_ID)) return; // already injected
-
+  if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement('style');
-  style.id = STYLE_ID;
+  style.id          = STYLE_ID;
   style.textContent = CSS;
   document.head.appendChild(style);
 }

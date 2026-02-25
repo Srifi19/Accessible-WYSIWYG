@@ -1,30 +1,23 @@
-import { commands, markActive, blockActive } from './commands.js';
-import { schema } from './schema.js';
+import { commands } from './commands.js';
 
-// ---------------------------------------------------------------------------
-// SVG icon definitions
-// ---------------------------------------------------------------------------
+// ── SVG icons ─────────────────────────────────────────────────────────────────
 
 const ICONS = {
   h2: `<svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
     <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 8a2 2 0 0 1-2 2h-2v2h4v2H9v-4a2 2 0 0 1 2-2h2V9H9V7h4a2 2 0 0 1 2 2v2z"/>
   </svg>`,
-
   h3: `<svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
     <path d="M19.01 3h-14c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4 7.5c0 .83-.67 1.5-1.5 1.5.83 0 1.5.67 1.5 1.5V15a2 2 0 0 1-2 2h-4v-2h4v-2h-2v-2h2V9h-4V7h4a2 2 0 0 1 2 2v1.5z"/>
   </svg>`,
-
   bold: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
     <path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/>
     <path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/>
   </svg>`,
-
   italic: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
     <line x1="19" y1="4" x2="10" y2="4"/>
     <line x1="14" y1="20" x2="5" y2="20"/>
     <line x1="15" y1="4" x2="9" y2="20"/>
   </svg>`,
-
   bullet: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
     <line x1="9" y1="6" x2="20" y2="6"/>
     <line x1="9" y1="12" x2="20" y2="12"/>
@@ -33,16 +26,13 @@ const ICONS = {
     <circle cx="4" cy="12" r="1" fill="currentColor"/>
     <circle cx="4" cy="18" r="1" fill="currentColor"/>
   </svg>`,
-
   ordered: `<svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
     <path d="M3 20v-1h2v-.5H4v-1h1V17H3v-1h3v4Zm5-1v-2h13v2Zm-5-5v-.9L4.8 11H3v-1h3v.9L4.2 13H6v1Zm5-1v-2h13v2ZM4 8V5H3V4h2v4Zm4-1V5h13v2Z"/>
   </svg>`,
-
   link: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
   </svg>`,
-
   unlink: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
@@ -50,9 +40,7 @@ const ICONS = {
   </svg>`,
 };
 
-// ---------------------------------------------------------------------------
-// Button definitions — order determines DOM order
-// ---------------------------------------------------------------------------
+// ── Button definitions ────────────────────────────────────────────────────────
 
 const BUTTON_DEFS = [
   { command: 'h2',      label: 'Heading 2' },
@@ -62,66 +50,55 @@ const BUTTON_DEFS = [
   { command: 'bullet',  label: 'Unordered list' },
   { command: 'ordered', label: 'Ordered list' },
   { command: 'link',    label: 'Link' },
-  { command: 'unlink',  label: 'Remove link', id: 'unlink-button', hidden: true },
+  { command: 'unlink',  label: 'Remove link', hidden: true },
 ];
 
-// Which commands map to which active-state checker
+// Maps each command to the Tiptap isActive() check
 const ACTIVE_CHECKERS = {
-  bold:    (state) => markActive(state, schema.marks.strong),
-  italic:  (state) => markActive(state, schema.marks.em),
-  h2:      (state) => blockActive(state, schema.nodes.heading, { level: 2 }),
-  h3:      (state) => blockActive(state, schema.nodes.heading, { level: 3 }),
-  bullet:  (state) => isInList(state, schema.nodes.bullet_list),
-  ordered: (state) => isInList(state, schema.nodes.ordered_list),
-  link:    (state) => markActive(state, schema.marks.link),
-  unlink:  ()      => false,
+  bold:    (editor) => editor.isActive('bold'),
+  italic:  (editor) => editor.isActive('italic'),
+  h2:      (editor) => editor.isActive('heading', { level: 2 }),
+  h3:      (editor) => editor.isActive('heading', { level: 3 }),
+  bullet:  (editor) => editor.isActive('bulletList'),
+  ordered: (editor) => editor.isActive('orderedList'),
+  link:    (editor) => editor.isActive('link'),
+  unlink:  ()       => false,
 };
 
-function isInList(state, listType) {
-  const { $from } = state.selection;
-  for (let d = $from.depth; d > 0; d--) {
-    if ($from.node(d).type === listType) return true;
-  }
-  return false;
-}
-
-// ---------------------------------------------------------------------------
+// ─────────────────────────────────────────────────────────────────────────────
 
 export class Toolbar {
   /**
-   * @param {object}   options
-   * @param {HTMLElement} options.container   - Where to inject the toolbar element
-   * @param {Function} options.getView        - Returns the current EditorView
-   * @param {Function} options.onLinkRequest  - Called when the link button is clicked
+   * @param {object}      options
+   * @param {HTMLElement} options.container      - Where to inject the toolbar
+   * @param {Function}    options.getEditor      - Returns the Tiptap Editor instance
+   * @param {Function}    options.onLinkRequest  - Called when link button clicked
    */
-  constructor({ container, getView, onLinkRequest }) {
+  constructor({ container, getEditor, onLinkRequest, editorId }) {
     if (!container) throw new Error('Toolbar: `container` is required');
 
-    this._getView  = getView;
-    this._onLink   = onLinkRequest;
-    this._buttons  = [];
-    this._index    = 0;           // roving tabindex pointer
-    this._el       = null;
+    this._getEditor = getEditor;
+    this._editorId  = editorId ?? null;
+    this._onLink    = onLinkRequest;
+    this._buttons   = [];
+    this._index     = 0;
+    this._el        = null;
 
     this._build(container);
     this._bindKeyboard();
     this._updateTabindex();
   }
 
-  // ---------------------------------------------------------------------------
-  // Build DOM
-  // ---------------------------------------------------------------------------
+  // ── Build DOM ───────────────────────────────────────────────────────────────
 
   _build(container) {
-    const editorId = container.closest('[id]')?.id ?? 'editor';
-
     this._el = document.createElement('div');
     this._el.className = 'wysiwyg-toolbar';
     this._el.setAttribute('role', 'toolbar');
     this._el.setAttribute('aria-label', 'Text formatting toolbar');
-    this._el.setAttribute('aria-controls', editorId);
+    if (this._editorId) this._el.setAttribute('aria-controls', this._editorId);
 
-    BUTTON_DEFS.forEach(({ command, label, id, hidden }) => {
+    BUTTON_DEFS.forEach(({ command, label, hidden }) => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'wysiwyg-toolbar-btn';
@@ -132,16 +109,13 @@ export class Toolbar {
       btn.setAttribute('tabindex', '-1');
       btn.innerHTML = ICONS[command] ?? '';
 
-      if (id) btn.id = id;
       if (hidden) btn.classList.add('wysiwyg-hidden');
 
-      // mousedown: keep editor focus, don't let button steal it
-      btn.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        this._getView()?.dom.focus();
-      });
+      // Prevent mousedown from stealing editor selection — button still gets focus naturally on click
+      btn.addEventListener('mousedown', (e) => e.preventDefault());
 
       btn.addEventListener('click', () => this._execute(command, btn));
+
       btn.addEventListener('focus', () => {
         this._index = this._buttons.indexOf(btn);
         this._updateTabindex();
@@ -155,15 +129,12 @@ export class Toolbar {
     container.prepend(this._el);
   }
 
-  // ---------------------------------------------------------------------------
-  // Keyboard navigation (roving tabindex — ARIA toolbar pattern)
-  // ---------------------------------------------------------------------------
+  // ── Keyboard navigation (ARIA toolbar roving tabindex) ───────────────────
 
   _bindKeyboard() {
     this._el.addEventListener('keydown', (e) => {
       const visible = this._visibleButtons();
       if (!visible.length) return;
-
       let handled = true;
 
       switch (e.key) {
@@ -192,34 +163,24 @@ export class Toolbar {
   }
 
   _visibleButtons() {
-    return this._buttons.filter((b) => !b.classList.contains('wysiwyg-hidden') && this._isVisible(b));
+    return this._buttons.filter((b) => !b.classList.contains('wysiwyg-hidden'));
   }
 
   _visibleIndex() {
     const visible = this._visibleButtons();
-    const focused = document.activeElement;
-    const idx = visible.indexOf(focused);
+    const idx     = visible.indexOf(document.activeElement);
     return idx === -1 ? 0 : idx;
-  }
-
-  _isVisible(el) {
-    return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
   }
 
   _updateTabindex() {
     const visible = this._visibleButtons();
     if (!visible.length) return;
-
-    // Clamp in case hidden buttons shifted things
     this._index = Math.max(0, Math.min(this._index, visible.length - 1));
-
     this._buttons.forEach((btn) => btn.setAttribute('tabindex', '-1'));
     visible[this._index].setAttribute('tabindex', '0');
   }
 
-  // ---------------------------------------------------------------------------
-  // Command execution
-  // ---------------------------------------------------------------------------
+  // ── Execute ──────────────────────────────────────────────────────────────────
 
   _execute(command, btn) {
     if (command === 'link') {
@@ -227,51 +188,36 @@ export class Toolbar {
       return;
     }
 
-    const view = this._getView();
-    if (!view) return;
+    const editor  = this._getEditor();
+    if (!editor) return;
 
     const factory = commands[command];
-    if (factory) {
-      factory()(view.state, view.dispatch, view);
-      view.focus();
-    }
+    if (factory) factory()(editor);
 
     this.syncActiveStates();
   }
 
-  // ---------------------------------------------------------------------------
-  // Sync active / pressed states
-  // ---------------------------------------------------------------------------
+  // ── Sync active / pressed states ─────────────────────────────────────────────
 
   syncActiveStates() {
-    const view = this._getView();
-    if (!view) return;
+    const editor = this._getEditor();
+    if (!editor) return;
 
-    const { state } = view;
-    const linkActive = markActive(state, schema.marks.link);
+    const linkIsActive = editor.isActive('link');
 
     this._buttons.forEach((btn) => {
       const command = btn.dataset.command;
 
-      // Unlink button: show only when cursor is inside a link
       if (command === 'unlink') {
-        const isNowHidden = !linkActive;
         const wasHidden = btn.classList.contains('wysiwyg-hidden');
-
-        btn.classList.toggle('wysiwyg-hidden', isNowHidden);
-
-        if (isNowHidden && !wasHidden) {
-          // Focus jumped away — reset tabindex to first visible button
-          this._index = 0;
-        }
-
+        btn.classList.toggle('wysiwyg-hidden', !linkIsActive);
+        if (!linkIsActive && !wasHidden) this._index = 0;
         this._updateTabindex();
         return;
       }
 
-      const checker = ACTIVE_CHECKERS[command];
-      const isActive = checker ? checker(state) : false;
-
+      const checker  = ACTIVE_CHECKERS[command];
+      const isActive = checker ? checker(editor) : false;
       btn.classList.toggle('active', isActive);
       btn.setAttribute('aria-pressed', String(isActive));
     });
@@ -279,18 +225,13 @@ export class Toolbar {
     this._updateTabindex();
   }
 
-  // ---------------------------------------------------------------------------
-  // Public
-  // ---------------------------------------------------------------------------
+  // ── Public ───────────────────────────────────────────────────────────────────
 
-  /** The toolbar DOM element */
-  get el() {
-    return this._el;
-  }
+  get el() { return this._el; }
 
   destroy() {
     this._el?.remove();
-    this._el = null;
+    this._el     = null;
     this._buttons = [];
   }
 }

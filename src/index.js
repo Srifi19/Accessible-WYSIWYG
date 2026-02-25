@@ -1,6 +1,5 @@
 /**
- * WYSIWYGEditor — a self-contained, accessible rich-text editor
- * built on ProseMirror. Drop it into any project with one import.
+ * WYSIWYGEditor — self-contained accessible rich-text editor built on Tiptap.
  *
  * Usage:
  *   import { WYSIWYGEditor } from './WYSIWYGEditor/index.js';
@@ -9,7 +8,7 @@
  *     container:      document.querySelector('#root'),
  *     onChange:       ({ html, json }) => console.log(html),
  *     initialContent: '<p>Hello world</p>',
- *     plugins:        [myPlugin],
+ *     plugins:        [(editor) => setupSaving(editor)],
  *   });
  *
  *   editor.getHTML();
@@ -18,32 +17,21 @@
  *   editor.destroy();
  */
 
-import { injectStyles }  from './styles.js';
-import { EditorCore }    from './editorCore.js';
-import { Toolbar }       from './toolbar.js';
-import { LinkPopup }     from './linkPopup.js';
+import { injectStyles } from './styles.js';
+import { EditorCore }   from './EditorCore.js';
+import { Toolbar }      from './Toolbar.js';
+import { LinkPopup }    from './LinkPopup.js';
 
 export class WYSIWYGEditor {
-  /**
-   * @param {object}      options
-   * @param {HTMLElement} options.container        - Mount element (required)
-   * @param {string}      [options.initialContent] - HTML string to pre-populate
-   * @param {Function}    [options.onChange]        - ({ html: string, json: object }) => void
-   * @param {object[]}    [options.plugins]         - Optional plugin array (markdown, saving, etc.)
-   *                                                  Each plugin receives the editor instance after init.
-   */
   constructor({ container, initialContent = '', onChange, plugins = [] } = {}) {
     if (!container || !(container instanceof HTMLElement)) {
       throw new Error('WYSIWYGEditor: `container` must be an HTMLElement');
     }
 
-    // 1. Styles (idempotent — injected once per page)
     injectStyles();
 
-    // 2. Build the wrapper skeleton
     this._container = container;
     this._container.classList.add('wysiwyg-container');
-
     this._onChange = onChange ?? null;
 
     // Live region for screen reader announcements
@@ -52,60 +40,46 @@ export class WYSIWYGEditor {
 
     // Editor mount point
     const editorMount = document.createElement('div');
-    editorMount.id = this._uniqueId('wysiwyg-editor');
-    editorMount.setAttribute('role', 'textbox');
-    editorMount.setAttribute('aria-multiline', 'true');
-    editorMount.setAttribute('aria-label', 'Text editor');
     this._container.appendChild(editorMount);
 
-    // 3. Core editor (ProseMirror view)
+    // Core (Tiptap)
     this._core = new EditorCore({
-      mount: editorMount,
+      mount:          editorMount,
       initialContent,
-      onTransaction: () => this._handleTransaction(),
+      onTransaction:  () => this._handleTransaction(),
     });
 
-    // 4. Link popup  (must exist before Toolbar so Toolbar can reference it)
+    // Link popup — must exist before Toolbar
     this._linkPopup = new LinkPopup({
       container: this._container,
-      getView:   () => this._core.view,
-      onApply:   () => this._announce('Link added.'),
+      getEditor: () => this._core.editor,
+      onApply:   () => this._announce('Link added to document.'),
     });
 
-    // 5. Toolbar (prepends itself into container)
+    // Toolbar
     this._toolbar = new Toolbar({
       container:     this._container,
-      getView:       () => this._core.view,
+      getEditor:     () => this._core.editor,
       onLinkRequest: (btn) => this._linkPopup.open(btn),
+      editorId:      this._core.editorId,
     });
 
-    // 6. Optional plugins
+    // Plugins
     this._plugins = [];
-    plugins.forEach((plugin) => this._registerPlugin(plugin));
+    plugins.forEach((p) => this._registerPlugin(p));
   }
 
-  // ---------------------------------------------------------------------------
-  // Internal
-  // ---------------------------------------------------------------------------
+  // ── Internal ──────────────────────────────────────────────────────────────
 
   _handleTransaction() {
     this._toolbar.syncActiveStates();
-
-    if (this._onChange) {
-      this._onChange({
-        html: this.getHTML(),
-        json: this.getJSON(),
-      });
-    }
+    this._onChange?.({ html: this.getHTML(), json: this.getJSON() });
   }
 
   _announce(message) {
     if (!this._status) return;
-    // Briefly clear then set — forces re-announcement in all screen readers
     this._status.textContent = '';
-    requestAnimationFrame(() => {
-      this._status.textContent = message;
-    });
+    requestAnimationFrame(() => { this._status.textContent = message; });
   }
 
   _buildStatus() {
@@ -116,68 +90,23 @@ export class WYSIWYGEditor {
     return el;
   }
 
-  _uniqueId(prefix) {
-    return `${prefix}-${Math.random().toString(36).slice(2, 8)}`;
-  }
-
   _registerPlugin(plugin) {
     if (typeof plugin !== 'function') {
-      console.warn('WYSIWYGEditor: plugin must be a function, got', typeof plugin);
+      console.warn('WYSIWYGEditor: plugin must be a function');
       return;
     }
-    try {
-      plugin(this);
-      this._plugins.push(plugin);
-    } catch (err) {
-      console.warn('WYSIWYGEditor: plugin failed to initialize:', err);
-    }
+    try   { plugin(this); this._plugins.push(plugin); }
+    catch (err) { console.warn('WYSIWYGEditor: plugin error:', err); }
   }
 
-  // ---------------------------------------------------------------------------
-  // Public API
-  // ---------------------------------------------------------------------------
+  // ── Public API ────────────────────────────────────────────────────────────
 
-  /**
-   * @returns {string} Current document as an HTML string
-   */
-  getHTML() {
-    return this._core.getHTML();
-  }
+  getHTML()         { return this._core.getHTML(); }
+  getJSON()         { return this._core.getJSON(); }
+  setContent(html)  { this._core.setContent(html); this._toolbar.syncActiveStates(); }
+  focus()           { this._core.focus(); }
+  announce(msg)     { this._announce(msg); }
 
-  /**
-   * @returns {object} Current document as a ProseMirror JSON object
-   */
-  getJSON() {
-    return this._core.getJSON();
-  }
-
-  /**
-   * Replace the editor content with an HTML string.
-   * @param {string} html
-   */
-  setContent(html) {
-    this._core.setContent(html);
-    this._toolbar.syncActiveStates();
-  }
-
-  /**
-   * Programmatically focus the editor.
-   */
-  focus() {
-    this._core.focus();
-  }
-
-  /**
-   * Post a message to the screen reader live region.
-   * @param {string} message
-   */
-  announce(message) {
-    this._announce(message);
-  }
-
-  /**
-   * Tear down the editor — removes all DOM, event listeners, and ProseMirror views.
-   */
   destroy() {
     this._toolbar?.destroy();
     this._linkPopup?.destroy();
@@ -187,12 +116,11 @@ export class WYSIWYGEditor {
   }
 
   // Expose internals for plugin authors
-  get view()      { return this._core?.view; }
-  get state()     { return this._core?.state; }
+  get editor()    { return this._core?.editor; }   // Tiptap Editor instance
+  get view()      { return this._core?.view; }     // ProseMirror view (if needed)
   get toolbar()   { return this._toolbar; }
   get linkPopup() { return this._linkPopup; }
 }
 
-// Re-export schema and helpers for advanced consumers / plugin authors
-export { schema }        from './schema.js';
+// Re-exports for plugin authors
 export { commands, markActive, blockActive, inList } from './commands.js';
