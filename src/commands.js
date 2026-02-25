@@ -30,18 +30,44 @@ export const commands = {
       .toggleHeading({ level: 3 })
       .run(),
 
-  // Clean list toggles
-  bullet: () => (e) =>
-    e.chain()
-      .focus()
-      .toggleBulletList()
-      .run(),
+  bullet: () => (e) => {
+  const editor = e
+  const { state } = editor
+  const isInList =
+    editor.isActive('bulletList') ||
+    editor.isActive('orderedList')
 
-  ordered: () => (e) =>
-    e.chain()
-      .focus()
-      .toggleOrderedList()
-      .run(),
+  if (isInList) {
+    // Proper unlist
+    return editor.chain().focus().liftListItem('listItem').run()
+  }
+
+  // Not in list → normalize safely then wrap
+  return editor
+    .chain()
+    .focus()
+    .liftListItem('listItem')   // unwrap nested lists if mixed selection
+    .toggleBulletList()
+    .run()
+},
+
+ordered: () => (e) => {
+  const editor = e
+  const isInList =
+    editor.isActive('bulletList') ||
+    editor.isActive('orderedList')
+
+  if (isInList) {
+    return editor.chain().focus().liftListItem('listItem').run()
+  }
+
+  return editor
+    .chain()
+    .focus()
+    .liftListItem('listItem')
+    .toggleOrderedList()
+    .run()
+},
 
   indent:  () => (e) => e.chain().focus().sinkListItem('listItem').run(),
   outdent: () => (e) => e.chain().focus().liftListItem('listItem').run(),
