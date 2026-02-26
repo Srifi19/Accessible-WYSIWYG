@@ -10,70 +10,67 @@ export function blockActive(editor, name, attrs={}) { return editor.isActive(nam
 export function inList(editor) {
   return editor.isActive('bulletList') || editor.isActive('orderedList');
 }
+
+/**
+ * When Ctrl+A is used, ProseMirror sets `to` to `doc.content.size`,
+ * which includes the trailing empty paragraph/node that always exists
+ * at the very end of the document. Any block transform (toggleHeading,
+ * toggleBulletList, etc.) touches that node and spawns a duplicate.
+ *
+ * The fix — used by Atlassian's editor and other PM implementations —
+ * is to clamp `to` to `doc.content.size - 1` so the last empty node
+ * is never inside the selection when a block command runs.
+ *
+ * If the selection is already within bounds (normal cursor / drag
+ * selection), this is a no-op.
+ */
+function clampSelection(editor) {
+  const { state } = editor;
+  const { from, to } = state.selection;
+  const max = state.doc.content.size - 1;
+  if (to <= max) return; // already fine, nothing to do
+  editor
+    .chain()
+    .setTextSelection({ from, to: max })
+    .run();
+}
+
 export const commands = {
   bold:      () => (e) => e.chain().toggleBold().run(),
   italic:    () => (e) => e.chain().toggleItalic().run(),
   underline: () => (e) => e.chain().toggleUnderline().run(),
 
-  // Clean structural heading toggle
-  h2: () => (e) =>
-    e.chain()
-      .focus()
-      .liftListItem('listItem')  // harmless if not in list
-      .toggleHeading({ level: 2 })
-      .run(),
+  h2: () => (e) => {
+    clampSelection(e);
+    return e.chain().toggleHeading({ level: 2 }).run();
+  },
 
-  h3: () => (e) =>
-    e.chain()
-      .focus()
-      .liftListItem('listItem')
-      .toggleHeading({ level: 3 })
-      .run(),
+  h3: () => (e) => {
+    clampSelection(e);
+    return e.chain().toggleHeading({ level: 3 }).run();
+  },
 
   bullet: () => (e) => {
-  const editor = e
-  const { state } = editor
-  const isInList =
-    editor.isActive('bulletList') ||
-    editor.isActive('orderedList')
+    clampSelection(e);
+    if (e.isActive('bulletList') || e.isActive('orderedList')) {
+      return e.chain().liftListItem('listItem').run();
+    }
+    return e.chain().toggleBulletList().run();
+  },
 
-  if (isInList) {
-    // Proper unlist
-    return editor.chain().focus().liftListItem('listItem').run()
-  }
+  ordered: () => (e) => {
+    clampSelection(e);
+    if (e.isActive('bulletList') || e.isActive('orderedList')) {
+      return e.chain().liftListItem('listItem').run();
+    }
+    return e.chain().toggleOrderedList().run();
+  },
 
-  // Not in list → normalize safely then wrap
-  return editor
-    .chain()
-    .focus()
-    .liftListItem('listItem')   // unwrap nested lists if mixed selection
-    .toggleBulletList()
-    .run()
-},
-
-ordered: () => (e) => {
-  const editor = e
-  const isInList =
-    editor.isActive('bulletList') ||
-    editor.isActive('orderedList')
-
-  if (isInList) {
-    return editor.chain().focus().liftListItem('listItem').run()
-  }
-
-  return editor
-    .chain()
-    .focus()
-    .liftListItem('listItem')
-    .toggleOrderedList()
-    .run()
-},
-
-  indent:  () => (e) => e.chain().focus().sinkListItem('listItem').run(),
-  outdent: () => (e) => e.chain().focus().liftListItem('listItem').run(),
+  indent:  () => (e) => e.chain().sinkListItem('listItem').run(),
+  outdent: () => (e) => e.chain().liftListItem('listItem').run(),
 
   link:   () => null,
-  unlink: () => (e) => e.chain().focus().unsetLink().run(),
+  unlink: () => (e) => e.chain().unsetLink().run(),
 
   undo: () => (e) => e.chain().focus().undo().run(),
   redo: () => (e) => e.chain().focus().redo().run(),
