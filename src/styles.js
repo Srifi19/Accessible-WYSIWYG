@@ -44,6 +44,12 @@ const CSS = /* css */ `
   flex-wrap: wrap;
 }
 
+.wysiwyg-toolbar-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none; /* optional — keeps tooltip visible if removed */
+}
+  
 .wysiwyg-toolbar-btn {
   display: flex;
   align-items: center;

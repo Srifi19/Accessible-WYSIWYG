@@ -29,6 +29,18 @@ const ICONS = {
   ordered: `<svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
     <path d="M3 20v-1h2v-.5H4v-1h1V17H3v-1h3v4Zm5-1v-2h13v2Zm-5-5v-.9L4.8 11H3v-1h3v.9L4.2 13H6v1Zm5-1v-2h13v2ZM4 8V5H3V4h2v4Zm4-1V5h13v2Z"/>
   </svg>`,
+  indent: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
+  <line x1="3" y1="6" x2="21" y2="6"/>
+  <line x1="3" y1="12" x2="21" y2="12"/>
+  <line x1="3" y1="18" x2="21" y2="18"/>
+  <polyline points="9 9 12 12 9 15"/>
+</svg>`,
+outdent: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
+  <line x1="3" y1="6" x2="21" y2="6"/>
+  <line x1="3" y1="12" x2="21" y2="12"/>
+  <line x1="3" y1="18" x2="21" y2="18"/>
+  <polyline points="12 9 9 12 12 15"/>
+</svg>`,
   link: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
@@ -38,6 +50,7 @@ const ICONS = {
     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
     <line x1="5" y1="5" x2="19" y2="19"/>
   </svg>`,
+  
 };
 
 // ── Button definitions ────────────────────────────────────────────────────────
@@ -49,8 +62,11 @@ const BUTTON_DEFS = [
   { command: 'italic',  label: 'Italic' },
   { command: 'bullet',  label: 'Unordered list' },
   { command: 'ordered', label: 'Ordered list' },
+  { command: 'outdent', label: 'Outdent' },
+{ command: 'indent',  label: 'Indent' },
   { command: 'link',    label: 'Link' },
   { command: 'unlink',  label: 'Remove link', hidden: true },
+
 ];
 
 // Maps each command to the Tiptap isActive() check
@@ -61,6 +77,8 @@ const ACTIVE_CHECKERS = {
   h3:      (editor) => editor.isActive('heading', { level: 3 }),
   bullet:  (editor) => editor.isActive('bulletList'),
   ordered: (editor) => editor.isActive('orderedList'),
+  indent:  () => false,
+outdent: () => false,
   link:    (editor) => editor.isActive('link'),
   unlink:  ()       => false,
 };
@@ -163,8 +181,10 @@ export class Toolbar {
   }
 
   _visibleButtons() {
-    return this._buttons.filter((b) => !b.classList.contains('wysiwyg-hidden'));
-  }
+  return this._buttons.filter(
+    (b) => !b.classList.contains('wysiwyg-hidden') && !b.disabled
+  );
+}
 
   _visibleIndex() {
     const visible = this._visibleButtons();
@@ -183,6 +203,7 @@ export class Toolbar {
   // ── Execute ──────────────────────────────────────────────────────────────────
 
   _execute(command, btn) {
+    if (btn.disabled) return; 
     if (command === 'link') {
       this._onLink?.(btn);
       return;
@@ -200,30 +221,39 @@ export class Toolbar {
   // ── Sync active / pressed states ─────────────────────────────────────────────
 
   syncActiveStates() {
-    const editor = this._getEditor();
-    if (!editor) return;
+  const editor = this._getEditor();
+  if (!editor) return;
 
-    const linkIsActive = editor.isActive('link');
+  const linkIsActive = editor.isActive('link');
+  const inList = editor.isActive('bulletList') || editor.isActive('orderedList');
 
-    this._buttons.forEach((btn) => {
-      const command = btn.dataset.command;
+  this._buttons.forEach((btn) => {
+    const command = btn.dataset.command;
 
-      if (command === 'unlink') {
-        const wasHidden = btn.classList.contains('wysiwyg-hidden');
-        btn.classList.toggle('wysiwyg-hidden', !linkIsActive);
-        if (!linkIsActive && !wasHidden) this._index = 0;
-        this._updateTabindex();
-        return;
-      }
+    // --- existing unlink logic ---
+    if (command === 'unlink') {
+      const wasHidden = btn.classList.contains('wysiwyg-hidden');
+      btn.classList.toggle('wysiwyg-hidden', !linkIsActive);
+      if (!linkIsActive && !wasHidden) this._index = 0;
+      this._updateTabindex();
+      return;
+    }
 
-      const checker  = ACTIVE_CHECKERS[command];
-      const isActive = checker ? checker(editor) : false;
-      btn.classList.toggle('active', isActive);
-      btn.setAttribute('aria-pressed', String(isActive));
-    });
+    // --- new: disable indent/outdent outside lists ---
+    if (command === 'indent' || command === 'outdent') {
+      btn.disabled = !inList;
+      btn.setAttribute('aria-disabled', String(!inList));
+      return;
+    }
 
-    this._updateTabindex();
-  }
+    const checker  = ACTIVE_CHECKERS[command];
+    const isActive = checker ? checker(editor) : false;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-pressed', String(isActive));
+  });
+
+  this._updateTabindex();
+}
 
   // ── Public ───────────────────────────────────────────────────────────────────
 
