@@ -1,6 +1,104 @@
-import { Editor } from '@tiptap/core'
+import { Editor, Extension } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import { Link } from '@tiptap/extension-link'
+
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[contenteditable]',
+  '[tabindex]:not([tabindex="-1"])',
+].join(', ')
+
+function isVisible(el) {
+  if (el.offsetParent === null && el.tagName !== 'BODY') return false
+  const style = window.getComputedStyle(el)
+  if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false
+  return true
+}
+
+function getVisibleFocusable() {
+  return Array.from(document.querySelectorAll(FOCUSABLE_SELECTOR)).filter(isVisible)
+}
+
+const NormalizeTabInList = Extension.create({
+  name: 'normalizeTabInList',
+  priority: 1000,
+
+  addKeyboardShortcuts() {
+    const isInsideList = (state) => {
+      const { $from } = state.selection
+      for (let depth = $from.depth; depth > 0; depth--) {
+        const node = $from.node(depth)
+        if (
+          node.type.name === 'listItem' ||
+          node.type.name === 'bulletList' ||
+          node.type.name === 'orderedList'
+        ) {
+          return true
+        }
+      }
+      return false
+    }
+
+    return {
+      Tab: ({ editor }) => {
+        if (!isInsideList(editor.state)) return false
+
+        const all = getVisibleFocusable()
+        const contentEl = editor.options.element.querySelector('[contenteditable]')
+        const currentIndex = all.indexOf(contentEl)
+        const target = all[currentIndex + 1] ?? null
+
+        if (target) {
+          target.focus()
+        } else {
+          contentEl.blur()
+        }
+        return true
+      },
+
+      'Shift-Tab': ({ editor }) => {
+        if (!isInsideList(editor.state)) return false
+
+        const lastFocused = editor.storage.normalizeTabInList?.lastFocused
+        const target = lastFocused && isVisible(lastFocused) && document.contains(lastFocused)
+          ? lastFocused
+          : (() => {
+              // Fallback: previous in DOM order
+              const all = getVisibleFocusable()
+              const contentEl = editor.options.element.querySelector('[contenteditable]')
+              return all[all.indexOf(contentEl) - 1] ?? null
+            })()
+
+        target?.focus()
+        return true
+      },
+    }
+  },
+
+  // Store last focused element in extension storage
+  addStorage() {
+    return { lastFocused: null }
+  },
+
+  onBeforeCreate() {
+    this._focusListener = (e) => {
+      const contentEl = this.editor.options.element?.querySelector('[contenteditable]')
+      // Only record elements outside the editor
+      if (contentEl && !contentEl.contains(e.target) && e.target !== contentEl) {
+        this.storage.lastFocused = e.target
+      }
+    }
+    document.addEventListener('focusin', this._focusListener, true)
+  },
+
+  onDestroy() {
+    document.removeEventListener('focusin', this._focusListener, true)
+  },
+})
 
 export class EditorCore {
   constructor({ mount, initialContent = '', onTransaction } = {}) {
@@ -10,7 +108,6 @@ export class EditorCore {
 
     this._onTransaction = onTransaction
 
-    // Stable ID for aria-controls
     this._editorId = 'wysiwyg-editor-' + Math.random().toString(36).slice(2, 7)
     mount.id = this._editorId
 
@@ -20,6 +117,7 @@ export class EditorCore {
       extensions: [
         StarterKit.configure({
           heading: { levels: [2, 3] },
+          link: false,
         }),
 
         Link.configure({
@@ -28,6 +126,8 @@ export class EditorCore {
             rel: 'noopener noreferrer',
           },
         }),
+
+        NormalizeTabInList,
       ],
 
       content: initialContent || '<p></p>',
@@ -41,7 +141,6 @@ export class EditorCore {
         },
 
         handleClick(view, pos, event) {
-          // Ctrl/Cmd + click opens link
           if (event.ctrlKey || event.metaKey) {
             const $pos = view.state.doc.resolve(pos)
             const linkMark = $pos.marks().find(m => m.type.name === 'link')
@@ -69,8 +168,7 @@ export class EditorCore {
     const hint = document.createElement('span')
     hint.id = 'wysiwyg-editor-hint'
     hint.className = 'wysiwyg-visually-hidden'
-    hint.textContent =
-      'Rich text editor. Use the toolbar above to format text.'
+    hint.textContent = 'Rich text editor. Use the toolbar above to format text.'
 
     mount.parentElement?.insertBefore(hint, mount)
   }

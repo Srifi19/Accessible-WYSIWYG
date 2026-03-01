@@ -39,7 +39,7 @@ const CSS = /* css */ `
   display: flex;
   gap: 2px;
   padding: 8px;
-  background: #fafafa;
+  background: #f0f0f0;
   border-bottom: 2px solid #767676;
   flex-wrap: wrap;
 }

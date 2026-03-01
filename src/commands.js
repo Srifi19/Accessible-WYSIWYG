@@ -30,7 +30,7 @@ export const commands = {
 
   bullet: () => (e) => {
     clampSelection(e);
-    if (e.isActive('bulletList') || e.isActive('orderedList')) {
+    if (e.isActive('bulletList') ) {
       return e.chain().liftListItem('listItem').run();
     }
     return e.chain().toggleBulletList().run();
@@ -38,7 +38,7 @@ export const commands = {
 
   ordered: () => (e) => {
     clampSelection(e);
-    if (e.isActive('bulletList') || e.isActive('orderedList')) {
+    if ( e.isActive('orderedList')) {
       return e.chain().liftListItem('listItem').run();
     }
     return e.chain().toggleOrderedList().run();

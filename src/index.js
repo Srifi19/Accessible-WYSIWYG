@@ -18,9 +18,9 @@
  */
 
 import { injectStyles } from './styles.js';
-import { EditorCore }   from './EditorCore.js';
-import { Toolbar }      from './Toolbar.js';
-import { LinkPopup }    from './LinkPopup.js';
+import { EditorCore }   from './editorCore.js';
+import { Toolbar }      from './toolbar.js';
+import { LinkPopup }    from './linkPopup.js';
 
 export class WYSIWYGEditor {
   constructor({ container, initialContent = '', onChange, plugins = [] } = {}) {
