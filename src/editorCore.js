@@ -1,6 +1,7 @@
 import { Editor, Extension } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import { Link } from '@tiptap/extension-link'
+import { createMarkdownParser, createMarkdownSerializer } from './markdown.js'
 
 const FOCUSABLE_SELECTOR = [
   'a[href]',
@@ -67,7 +68,6 @@ const NormalizeTabInList = Extension.create({
         const target = lastFocused && isVisible(lastFocused) && document.contains(lastFocused)
           ? lastFocused
           : (() => {
-              // Fallback: previous in DOM order
               const all = getVisibleFocusable()
               const contentEl = editor.options.element.querySelector('[contenteditable]')
               return all[all.indexOf(contentEl) - 1] ?? null
@@ -79,7 +79,6 @@ const NormalizeTabInList = Extension.create({
     }
   },
 
-  // Store last focused element in extension storage
   addStorage() {
     return { lastFocused: null }
   },
@@ -87,7 +86,6 @@ const NormalizeTabInList = Extension.create({
   onBeforeCreate() {
     this._focusListener = (e) => {
       const contentEl = this.editor.options.element?.querySelector('[contenteditable]')
-      // Only record elements outside the editor
       if (contentEl && !contentEl.contains(e.target) && e.target !== contentEl) {
         this.storage.lastFocused = e.target
       }
@@ -159,6 +157,11 @@ export class EditorCore {
       },
     })
 
+    // Markdown parser/serializer bound to THIS editor's schema
+    const schema = this._editor.schema
+    this._markdownParser = createMarkdownParser(schema)
+    this._markdownSerializer = createMarkdownSerializer(schema)
+
     this._injectHint(mount)
   }
 
@@ -183,4 +186,13 @@ export class EditorCore {
   setContent(html) { this._editor.commands.setContent(html, true) }
   focus()          { this._editor.commands.focus() }
   destroy()        { this._editor?.destroy() }
+
+  getMarkdown() {
+    return this._markdownSerializer.serialize(this._editor.state.doc)
+  }
+
+  setMarkdown(md) {
+    const doc = this._markdownParser.parse(md)
+    this._editor.commands.setContent(doc.toJSON())
+  }
 }

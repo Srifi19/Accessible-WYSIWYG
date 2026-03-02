@@ -1,20 +1,5 @@
 /**
  * WYSIWYGEditor — self-contained accessible rich-text editor built on Tiptap.
- *
- * Usage:
- *   import { WYSIWYGEditor } from './WYSIWYGEditor/index.js';
- *
- *   const editor = new WYSIWYGEditor({
- *     container:      document.querySelector('#root'),
- *     onChange:       ({ html, json }) => console.log(html),
- *     initialContent: '<p>Hello world</p>',
- *     plugins:        [(editor) => setupSaving(editor)],
- *   });
- *
- *   editor.getHTML();
- *   editor.getJSON();
- *   editor.setContent('<p>New content</p>');
- *   editor.destroy();
  */
 
 import { injectStyles } from './styles.js';
@@ -73,7 +58,7 @@ export class WYSIWYGEditor {
 
   _handleTransaction() {
     this._toolbar.syncActiveStates();
-    this._onChange?.({ html: this.getHTML(), json: this.getJSON() });
+    this._onChange?.({ html: this.getHTML(), json: this.getJSON(), markdown: this.getMarkdown() });
   }
 
   _announce(message) {
@@ -101,11 +86,20 @@ export class WYSIWYGEditor {
 
   // ── Public API ────────────────────────────────────────────────────────────
 
-  getHTML()         { return this._core.getHTML(); }
-  getJSON()         { return this._core.getJSON(); }
-  setContent(html)  { this._core.setContent(html); this._toolbar.syncActiveStates(); }
-  focus()           { this._core.focus(); }
-  announce(msg)     { this._announce(msg); }
+  getHTML()        { return this._core.getHTML(); }
+  getJSON()        { return this._core.getJSON(); }
+  setContent(html) { this._core.setContent(html); this._toolbar.syncActiveStates(); }
+  focus()          { this._core.focus(); }
+  announce(msg)    { this._announce(msg); }
+
+  getMarkdown() {
+    return this._core.getMarkdown();
+  }
+
+  setMarkdown(md) {
+    this._core.setMarkdown(md);
+    this._toolbar.syncActiveStates();
+  }
 
   destroy() {
     this._toolbar?.destroy();
@@ -116,8 +110,8 @@ export class WYSIWYGEditor {
   }
 
   // Expose internals for plugin authors
-  get editor()    { return this._core?.editor; }   // Tiptap Editor instance
-  get view()      { return this._core?.view; }     // ProseMirror view (if needed)
+  get editor()    { return this._core?.editor; }
+  get view()      { return this._core?.view; }
   get toolbar()   { return this._toolbar; }
   get linkPopup() { return this._linkPopup; }
 }
