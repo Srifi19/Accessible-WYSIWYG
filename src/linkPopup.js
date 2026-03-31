@@ -36,7 +36,6 @@ export class LinkPopup {
     this._el = document.createElement('div')
     this._el.className = 'wysiwyg-link-popup'
     this._el.setAttribute('hidden', '')
-    this._el.setAttribute('aria-hidden', 'true')
     this._el.setAttribute('role', 'dialog')
     this._el.setAttribute('aria-modal', 'true')
     this._el.setAttribute('aria-labelledby', 'wysiwyg-link-popup-title')
@@ -57,7 +56,7 @@ export class LinkPopup {
           aria-describedby="wysiwyg-link-url-error"
           autocomplete="url"
         />
-        <span id="wysiwyg-link-url-error" class="wysiwyg-field-error" aria-live="polite" hidden></span>
+        <span id="wysiwyg-link-url-error" class="wysiwyg-field-error" aria-live="polite"></span>
 
         <label for="wysiwyg-link-display">
           <b>Display Text (optional)</b>
@@ -80,6 +79,7 @@ export class LinkPopup {
     this._lblInput = this._el.querySelector('#wysiwyg-link-display')
     this._urlError = this._el.querySelector('#wysiwyg-link-url-error')
 
+    // --- FIX: Live region always exists, never hidden ---
     this._liveRegion = document.getElementById('wysiwyg-sr-announce')
     if (!this._liveRegion) {
       this._liveRegion = document.createElement('span')
@@ -153,7 +153,6 @@ export class LinkPopup {
     }
 
     this._el.removeAttribute('hidden')
-    this._el.setAttribute('aria-hidden', 'false')
     document.body.classList.add('wysiwyg-no-scroll')
     setTimeout(() => this._urlInput.focus(), 0)
   }
@@ -162,7 +161,7 @@ export class LinkPopup {
     const raw = this._urlInput.value.trim()
 
     if (!raw) {
-      this._setError('URL is required. Please enter a web address.')
+      this._setError('URL is required. Please enter a web address, e.g. https://example.com')
       this._urlInput.focus()
       return
     }
@@ -197,7 +196,6 @@ export class LinkPopup {
 
   close() {
     this._el.setAttribute('hidden', '')
-    this._el.setAttribute('aria-hidden', 'true')
     document.body.classList.remove('wysiwyg-no-scroll')
 
     const opener = this._opener
@@ -213,6 +211,7 @@ export class LinkPopup {
   }
 
   _announce(message) {
+    // Reliable live region update
     this._liveRegion.textContent = ''
     requestAnimationFrame(() => {
       this._liveRegion.textContent = message
@@ -222,12 +221,10 @@ export class LinkPopup {
   _setError(message) {
     if (message) {
       this._urlError.textContent = message
-      this._urlError.removeAttribute('hidden')
       this._urlInput.setAttribute('aria-invalid', 'true')
       this._urlInput.classList.add('wysiwyg-input-invalid')
     } else {
       this._urlError.textContent = ''
-      this._urlError.setAttribute('hidden', '')
       this._urlInput.removeAttribute('aria-invalid')
       this._urlInput.classList.remove('wysiwyg-input-invalid')
     }

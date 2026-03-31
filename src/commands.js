@@ -71,8 +71,8 @@ export const commands = {
     return e.chain().toggleOrderedList().run();
   }),
 
-  indent:  () => (e) => e.chain().sinkListItem('listItem').run(),
-  outdent: () => (e) => e.chain().liftListItem('listItem').run(),
+  // indent:  () => (e) => e.chain().sinkListItem('listItem').run(),
+  // outdent: () => (e) => e.chain().liftListItem('listItem').run(),
 
   link:   () => null,
   unlink: () => (e) => e.chain().unsetLink().run(),

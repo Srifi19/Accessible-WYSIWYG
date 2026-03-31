@@ -1,5 +1,18 @@
-<div id="root"></div>
-<script type="module">
-  import { WYSIWYGEditor } from './src/index.js';
-  new WYSIWYGEditor({ container: document.querySelector('#root') });
-</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Accessible WYSIWYG Editor</title>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="module">
+    import { WYSIWYGEditor } from './dist/index.js';
+    new WYSIWYGEditor({
+      container: document.querySelector('#root')
+    });
+  </script>
+</body>
+</html>

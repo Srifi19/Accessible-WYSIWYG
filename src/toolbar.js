@@ -33,6 +33,7 @@ const ICONS = {
   ordered: `<svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
     <path d="M3 20v-1h2v-.5H4v-1h1V17H3v-1h3v4Zm5-1v-2h13v2Zm-5-5v-.9L4.8 11H3v-1h3v.9L4.2 13H6v1Zm5-1v-2h13v2ZM4 8V5H3V4h2v4Zm4-1V5h13v2Z"/>
   </svg>`,
+  /*
   indent: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
     <line x1="3" y1="6" x2="21" y2="6"/>
     <line x1="3" y1="12" x2="21" y2="12"/>
@@ -45,6 +46,7 @@ const ICONS = {
     <line x1="3" y1="18" x2="21" y2="18"/>
     <polyline points="12 9 9 12 12 15"/>
   </svg>`,
+  */
   link: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
@@ -64,8 +66,8 @@ const BUTTON_DEFS = [
   { command: 'italic',  label: 'Italic' },
   { command: 'bullet',  label: 'Unordered list' },
   { command: 'ordered', label: 'Ordered list' },
-  { command: 'outdent', label: 'Outdent' },
-  { command: 'indent',  label: 'Indent' },
+//  { command: 'outdent', label: 'Outdent' },
+  // { command: 'indent',  label: 'Indent' },
   { command: 'link',    label: 'Link' },
   { command: 'unlink',  label: 'Remove link', hidden: true },
 ];
@@ -78,8 +80,8 @@ const ACTIVE_CHECKERS = {
   h3:      (editor) => editor.isActive('heading', { level: 3 }),
   bullet:  (editor) => editor.isActive('bulletList'),
   ordered: (editor) => editor.isActive('orderedList'),
-  indent:  () => false,
-  outdent: () => false,
+//  indent:  () => false,
+//  outdent: () => false,
   link:    (editor) => editor.isActive('link'),
   unlink:  ()       => false,
 };
@@ -136,10 +138,12 @@ export class Toolbar {
       if (hidden) btn.classList.add('wysiwyg-hidden');
 
       // Start Indent/Outdent disabled by default (visible).
+      /*
       if (command === 'indent' || command === 'outdent') {
         btn.disabled = true;
         btn.setAttribute('aria-disabled', 'true');
       }
+        */
 
       // Prevent mousedown from stealing editor selection — button still gets focus naturally on click
       btn.addEventListener('mousedown', (e) => e.preventDefault());
@@ -310,6 +314,7 @@ export class Toolbar {
       }
 
       // Indent: enable/disable only
+      /*
       if (command === 'indent') {
         const can = canIndent;
         btn.disabled = !can;
@@ -324,6 +329,7 @@ export class Toolbar {
         btn.setAttribute('aria-disabled', String(!can));
         return;
       }
+        */
 
       // Active states for other buttons
       const checker  = ACTIVE_CHECKERS[command];
