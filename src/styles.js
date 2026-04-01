@@ -92,15 +92,7 @@ const CSS = /* css */ `
   pointer-events: none;
 }
 
-.wysiwyg-toolbar-btn[data-command="bold"].active svg {
-  fill: #fff;
-  stroke: #fff;
-}
-.wysiwyg-toolbar-btn[data-command="link"].active svg,
-.wysiwyg-toolbar-btn[data-command="unlink"].active svg {
-  fill: none;
-  stroke: #fff;
-}
+
 
 /* ---- ProseMirror / Tiptap surface ---- */
 .wysiwyg-container .tiptap,
@@ -248,7 +240,6 @@ const CSS = /* css */ `
   /* icon prefix to not rely on color alone */
 }
 .wysiwyg-field-error:not([hidden])::before {
-  content: '⚠ ';
 }
 
 .wysiwyg-input-invalid {
@@ -297,7 +288,6 @@ const CSS = /* css */ `
 /* ---- Body scroll lock ---- */
 body.wysiwyg-no-scroll { overflow: hidden; }
 
-/* ---- Responsive ---- */
 @media (max-width: 640px) {
   .wysiwyg-link-popup-content {
     padding: 1.25rem;
@@ -306,7 +296,6 @@ body.wysiwyg-no-scroll { overflow: hidden; }
   .wysiwyg-toolbar-btn { width: 32px; height: 32px; }
 }
 
-/* ---- Forced colors — Windows High Contrast Mode (37478) ---- */
 @media (forced-colors: active) {
   .wysiwyg-toolbar {
     border-bottom: 2px solid ButtonText;
@@ -328,21 +317,22 @@ body.wysiwyg-no-scroll { overflow: hidden; }
     outline-offset: 1px;
   }
   .wysiwyg-toolbar-btn.active {
-    background: Highlight;
-    color: HighlightText;
-    border-color: HighlightText;
+    background-color: ButtonText;
+    color: ButtonFace;
+    border-color: ButtonText;
+    forced-color-adjust: none;
   }
-  /* SVGs inherit system ButtonText color — visible in all HC themes */
   .wysiwyg-toolbar-btn svg {
     fill: currentColor;
     stroke: currentColor;
   }
-  .wysiwyg-toolbar-btn[data-command="bold"].active svg,
-  .wysiwyg-toolbar-btn[data-command="link"].active svg,
-  .wysiwyg-toolbar-btn[data-command="unlink"].active svg {
-    fill: currentColor;
-    stroke: currentColor;
+
+  .wysiwyg-toolbar-btn.active svg {
+    fill: ButtonFace;
+    color: ButtonFace;
+    stroke: ButtonFace;
   }
+
   /* Editor surface */
   .wysiwyg-container {
     border-color: ButtonText;
@@ -371,16 +361,20 @@ body.wysiwyg-no-scroll { overflow: hidden; }
     background: Field;
     color: FieldText;
   }
-  .wysiwyg-link-apply {
-    background: Highlight;
-    color: HighlightText;
-    border-color: Highlight;
-  }
-  .wysiwyg-link-cancel {
-    background: ButtonFace;
-    color: ButtonText;
-    border-color: ButtonText;
-  }
+
+  .wysiwyg-link-cancel { background: ButtonFace; color: ButtonText; border: 2px solid ButtonText; forced-color-adjust: none; }
+
+.wysiwyg-link-apply { background: ButtonText; color: ButtonFace; border: 2px solid ButtonFace; forced-color-adjust: none; }
+
+.wysiwyg-link-apply:hover { background: Highlight; color: HighlightText; border-color: HighlightText; }
+
+.wysiwyg-link-cancel:hover {
+  background: Highlight;
+  color: HighlightText;
+  border-color: HighlightText;
+}
+
+
   .wysiwyg-input-invalid {
     border-color: LinkText !important;
   }

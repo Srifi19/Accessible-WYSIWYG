@@ -34,11 +34,10 @@ export class WYSIWYGEditor {
       onTransaction:  () => this._handleTransaction(),
     });
 
-    // Link popup — must exist before Toolbar
     this._linkPopup = new LinkPopup({
       container: this._container,
       getEditor: () => this._core.editor,
-      onApply:   () => this._announce('Link added to document.'),
+      onApply:   () => {},
     });
 
     // Toolbar

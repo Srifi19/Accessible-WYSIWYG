@@ -158,41 +158,57 @@ export class LinkPopup {
   }
 
   apply() {
-    const raw = this._urlInput.value.trim()
+  const raw = this._urlInput.value.trim()
 
-    if (!raw) {
-      this._setError('URL is required. Please enter a web address, e.g. https://example.com')
-      this._urlInput.focus()
-      return
-    }
-
-    const url = addProtocol(raw)
-
-    if (!isValidUrl(url)) {
-      this._setError('Please enter a valid URL, e.g. https://example.com')
-      this._urlInput.focus()
-      return
-    }
-
-    this._setError(null)
-
-    const editor = this._getEditor()
-    if (!editor) return
-
-    const label = this._lblInput.value.trim()
-
-    if (label && editor.state.selection.empty) {
-      editor.chain().focus().insertContent(`<a href="${url}">${label}</a>`).run()
-    } else if (label) {
-      editor.chain().focus().deleteSelection().insertContent(`<a href="${url}">${label}</a>`).run()
-    } else {
-      editor.chain().focus().setLink({ href: url }).run()
-    }
-
-    this._onApply?.()
-    this._announce('Link added.')
-    setTimeout(() => this.close(), 100)
+  if (!raw) {
+    this._setError('URL is required. Please enter a web address, e.g. https://example.com')
+    this._urlInput.focus()
+    return
   }
+
+  const url = addProtocol(raw)
+
+  if (!isValidUrl(url)) {
+    this._setError('Please enter a valid URL, e.g. https://example.com')
+    this._urlInput.focus()
+    return
+  }
+
+  this._setError(null)
+
+  const editor = this._getEditor()
+  if (!editor) return
+
+  const label = this._lblInput.value.trim()
+  let success = false
+
+  if (label && editor.state.selection.empty) {
+    success = editor.chain().focus()
+      .insertContent(`<a href="${url}">${label}</a>`)
+      .run()
+  } else if (label) {
+    success = editor.chain().focus()
+      .deleteSelection()
+      .insertContent(`<a href="${url}">${label}</a>`)
+      .run()
+  } else {
+    success = editor.chain().focus()
+      .setLink({ href: url })
+      .run()
+  }
+
+  if (!success) {
+    this._announce('No text selected. Link not inserted.')
+    this._urlInput.focus()
+    return
+  }
+
+  this._announce('Link added.')
+
+  this._onApply?.()
+  setTimeout(() => this.close(), 100)
+}
+
 
   close() {
     this._el.setAttribute('hidden', '')
