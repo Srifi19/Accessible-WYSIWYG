@@ -8,7 +8,14 @@ import { Toolbar }      from './toolbar.js';
 import { LinkPopup }    from './linkPopup.js';
 
 export class WYSIWYGEditor {
-  constructor({ container, initialContent = '', onChange, plugins = [] } = {}) {
+  constructor({
+    container,
+    initialContent = '',
+    onChange,
+    plugins = [],
+    language = 'en',        
+  } = {}) {
+
     if (!container || !(container instanceof HTMLElement)) {
       throw new Error('WYSIWYGEditor: `container` must be an HTMLElement');
     }
@@ -18,13 +25,15 @@ export class WYSIWYGEditor {
     this._container = container;
     this._container.classList.add('wysiwyg-container');
     this._onChange = onChange ?? null;
-
+    this._language = language;  
     // Live region for screen reader announcements
     this._status = this._buildStatus();
     this._container.appendChild(this._status);
 
     // Editor mount point
     const editorMount = document.createElement('div');
+    editorMount.setAttribute('lang', this._language);  
+    this._editorMount = editorMount;
     this._container.appendChild(editorMount);
 
     // Core (Tiptap)
@@ -36,6 +45,7 @@ export class WYSIWYGEditor {
 
     this._linkPopup = new LinkPopup({
       container: this._container,
+      language: this._language,
       getEditor: () => this._core.editor,
       onApply:   () => {},
     });
@@ -43,6 +53,7 @@ export class WYSIWYGEditor {
     // Toolbar
     this._toolbar = new Toolbar({
       container:     this._container,
+            language: this._language,
       getEditor:     () => this._core.editor,
       onLinkRequest: (btn) => this._linkPopup.open(btn),
       editorId:      this._core.editorId,
@@ -57,7 +68,11 @@ export class WYSIWYGEditor {
 
   _handleTransaction() {
     this._toolbar.syncActiveStates();
-    this._onChange?.({ html: this.getHTML(), json: this.getJSON(), markdown: this.getMarkdown() });
+    this._onChange?.({
+      html: this.getHTML(),
+      json: this.getJSON(),
+      markdown: this.getMarkdown(),
+    });
   }
 
   _announce(message) {
@@ -79,25 +94,39 @@ export class WYSIWYGEditor {
       console.warn('WYSIWYGEditor: plugin must be a function');
       return;
     }
-    try   { plugin(this); this._plugins.push(plugin); }
-    catch (err) { console.warn('WYSIWYGEditor: plugin error:', err); }
+    try {
+      plugin(this);
+      this._plugins.push(plugin);
+    } catch (err) {
+      console.warn('WYSIWYGEditor: plugin error:', err);
+    }
   }
 
   // ── Public API ────────────────────────────────────────────────────────────
 
   getHTML()        { return this._core.getHTML(); }
   getJSON()        { return this._core.getJSON(); }
-  setContent(html) { this._core.setContent(html); this._toolbar.syncActiveStates(); }
-  focus()          { this._core.focus(); }
-  announce(msg)    { this._announce(msg); }
+  getMarkdown()    { return this._core.getMarkdown(); }
 
-  getMarkdown() {
-    return this._core.getMarkdown();
+  setContent(html) {
+    this._core.setContent(html);
+    this._toolbar.syncActiveStates();
   }
 
   setMarkdown(md) {
     this._core.setMarkdown(md);
     this._toolbar.syncActiveStates();
+  }
+
+  focus()       { this._core.focus(); }
+  announce(msg) { this._announce(msg); }
+
+
+  setLanguage(lang) {
+    this._language = lang;
+    if (this._editorMount) {
+      this._editorMount.setAttribute('lang', lang);
+    }
   }
 
   destroy() {
@@ -114,6 +143,3 @@ export class WYSIWYGEditor {
   get toolbar()   { return this._toolbar; }
   get linkPopup() { return this._linkPopup; }
 }
-
-// Re-exports for plugin authors
-export { commands, markActive, blockActive, inList } from './commands.js';

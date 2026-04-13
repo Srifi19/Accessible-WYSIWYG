@@ -202,7 +202,6 @@ const CSS = /* css */ `
 .wysiwyg-link-popup-content label {
   display: block;
   margin-bottom: .35rem;
-  font-weight: 500;
   color: #1a1a1a;
 }
 

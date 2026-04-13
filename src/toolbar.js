@@ -5,6 +5,32 @@ import { commands } from './commands.js';
 const DEBUG = typeof window !== 'undefined' && !!window.WYSIWYG_DEBUG;
 const tlog  = (...args) => { if (DEBUG) console.debug('[Toolbar]', ...args); };
 
+// ── Inline i18n (Toolbar only) ────────────────────────────────────────────────
+const TOOLBAR_I18N = {
+  en: {
+    toolbarLabel: 'Text formatting toolbar',
+    h2: 'Heading 2',
+    h3: 'Heading 3',
+    bold: 'Bold',
+    italic: 'Italic',
+    bullet: 'Unordered list',
+    ordered: 'Ordered list',
+    link: 'Link',
+    unlink: 'Remove link',
+  },
+  fr: {
+    toolbarLabel: 'Barre de mise en forme du texte',
+    h2: 'Titre 2',
+    h3: 'Titre 3',
+    bold: 'Gras',
+    italic: 'Italique',
+    bullet: 'Liste à puces',
+    ordered: 'Liste numérotée',
+    link: 'Lien',
+    unlink: 'Supprimer le lien',
+  },
+};
+
 // ── SVG icons ─────────────────────────────────────────────────────────────────
 const ICONS = {
   h2: `<svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
@@ -33,20 +59,6 @@ const ICONS = {
   ordered: `<svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
     <path d="M3 20v-1h2v-.5H4v-1h1V17H3v-1h3v4Zm5-1v-2h13v2Zm-5-5v-.9L4.8 11H3v-1h3v.9L4.2 13H6v1Zm5-1v-2h13v2ZM4 8V5H3V4h2v4Zm4-1V5h13v2Z"/>
   </svg>`,
-  /*
-  indent: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
-    <line x1="3" y1="6" x2="21" y2="6"/>
-    <line x1="3" y1="12" x2="21" y2="12"/>
-    <line x1="3" y1="18" x2="21" y2="18"/>
-    <polyline points="9 9 12 12 9 15"/>
-  </svg>`,
-  outdent: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
-    <line x1="3" y1="6" x2="21" y2="6"/>
-    <line x1="3" y1="12" x2="21" y2="12"/>
-    <line x1="3" y1="18" x2="21" y2="18"/>
-    <polyline points="12 9 9 12 12 15"/>
-  </svg>`,
-  */
   link: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
     <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
@@ -60,16 +72,14 @@ const ICONS = {
 
 // ── Button definitions ────────────────────────────────────────────────────────
 const BUTTON_DEFS = [
-  { command: 'h2',      label: 'Heading 2' },
-  { command: 'h3',      label: 'Heading 3' },
-  { command: 'bold',    label: 'Bold' },
-  { command: 'italic',  label: 'Italic' },
-  { command: 'bullet',  label: 'Unordered list' },
-  { command: 'ordered', label: 'Ordered list' },
-//  { command: 'outdent', label: 'Outdent' },
-  // { command: 'indent',  label: 'Indent' },
-  { command: 'link',    label: 'Link' },
-  { command: 'unlink',  label: 'Remove link', hidden: true },
+  { command: 'h2' },
+  { command: 'h3' },
+  { command: 'bold' },
+  { command: 'italic' },
+  { command: 'bullet' },
+  { command: 'ordered' },
+  { command: 'link' },
+  { command: 'unlink', hidden: true },
 ];
 
 // Maps each command to the Tiptap isActive() check
@@ -80,8 +90,6 @@ const ACTIVE_CHECKERS = {
   h3:      (editor) => editor.isActive('heading', { level: 3 }),
   bullet:  (editor) => editor.isActive('bulletList'),
   ordered: (editor) => editor.isActive('orderedList'),
-//  indent:  () => false,
-//  outdent: () => false,
   link:    (editor) => editor.isActive('link'),
   unlink:  ()       => false,
 };
@@ -89,15 +97,15 @@ const ACTIVE_CHECKERS = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export class Toolbar {
-  /**
-   * @param {object}      options
-   * @param {HTMLElement} options.container      - Where to inject the toolbar
-   * @param {Function}    options.getEditor      - Returns the Tiptap Editor instance
-   * @param {Function}    options.onLinkRequest  - Called when link button clicked
-   * @param {string}      [options.editorId]     - ARIA controls id
-   */
-  constructor({ container, getEditor, onLinkRequest, editorId }) {
+  constructor({ container, getEditor, onLinkRequest, editorId, lang }) {
     if (!container) throw new Error('Toolbar: `container` is required');
+
+    this._lang =
+      lang ||
+      document.documentElement.lang?.slice(0, 2) ||
+      'en';
+
+    this._t = TOOLBAR_I18N[this._lang] || TOOLBAR_I18N.en;
 
     this._getEditor = getEditor;
     this._editorId  = editorId ?? null;
@@ -115,16 +123,16 @@ export class Toolbar {
     this._updateTabindex();
   }
 
-  // ── Build DOM ───────────────────────────────────────────────────────────────
-
   _build(container) {
     this._el = document.createElement('div');
     this._el.className = 'wysiwyg-toolbar';
     this._el.setAttribute('role', 'toolbar');
-    this._el.setAttribute('aria-label', 'Text formatting toolbar');
+    this._el.setAttribute('aria-label', this._t.toolbarLabel);
     if (this._editorId) this._el.setAttribute('aria-controls', this._editorId);
 
-    BUTTON_DEFS.forEach(({ command, label, hidden }) => {
+    BUTTON_DEFS.forEach(({ command, hidden }) => {
+      const label = this._t[command] || command;
+
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'wysiwyg-toolbar-btn';
@@ -137,19 +145,8 @@ export class Toolbar {
 
       if (hidden) btn.classList.add('wysiwyg-hidden');
 
-      // Start Indent/Outdent disabled by default (visible).
-      /*
-      if (command === 'indent' || command === 'outdent') {
-        btn.disabled = true;
-        btn.setAttribute('aria-disabled', 'true');
-      }
-        */
-
-      // Prevent mousedown from stealing editor selection — button still gets focus naturally on click
       btn.addEventListener('mousedown', (e) => e.preventDefault());
-
       btn.addEventListener('click', () => this._execute(command, btn));
-
       btn.addEventListener('focus', () => {
         this._index = this._buttons.indexOf(btn);
         this._updateTabindex();
@@ -162,8 +159,6 @@ export class Toolbar {
 
     container.prepend(this._el);
   }
-
-  // ── Editor event binding ────────────────────────────────────────────────────
 
   _tryBindEditorEvents() {
     const editor = this._getEditor?.();
@@ -179,7 +174,6 @@ export class Toolbar {
     this._unsubs.push(() => editor.off('update', onChange));
 
     this._editorBound = true;
-    tlog('Editor events bound');
   }
 
   _scheduleSync() {
@@ -190,12 +184,11 @@ export class Toolbar {
     });
   }
 
-  // ── Keyboard navigation (ARIA toolbar roving tabindex) ───────────────────
-
   _bindKeyboard() {
     this._el.addEventListener('keydown', (e) => {
       const visible = this._visibleButtons();
       if (!visible.length) return;
+
       let handled = true;
 
       switch (e.key) {
@@ -231,19 +224,18 @@ export class Toolbar {
 
   _visibleIndex() {
     const visible = this._visibleButtons();
-    const idx     = visible.indexOf(document.activeElement);
+    const idx = visible.indexOf(document.activeElement);
     return idx === -1 ? 0 : idx;
   }
 
   _updateTabindex() {
     const visible = this._visibleButtons();
     if (!visible.length) return;
+
     this._index = Math.max(0, Math.min(this._index, visible.length - 1));
     this._buttons.forEach((btn) => btn.setAttribute('tabindex', '-1'));
     visible[this._index].setAttribute('tabindex', '0');
   }
-
-  // ── Execute ──────────────────────────────────────────────────────────────────
 
   _execute(command, btn) {
     if (btn.disabled) return;
@@ -253,58 +245,31 @@ export class Toolbar {
       return;
     }
 
-    const editor  = this._getEditor();
+    const editor = this._getEditor();
     if (!editor) return;
 
     const factory = commands[command];
-    if (factory) {
-      tlog('Execute command:', command);
-      factory()(editor);
-    }
+    if (factory) factory()(editor);
 
-    // Ensure events are bound if editor became available later
     this._tryBindEditorEvents();
-
-    // Update states (buttons may enable/disable/hide here)
     this.syncActiveStates();
 
-    // If this button disabled itself due to action, move focus
     if (btn.disabled || btn.classList.contains('wysiwyg-hidden')) {
       queueMicrotask(() => this._focusNextUsable(btn));
     }
   }
 
-  // ── Sync active / pressed states ─────────────────────────────────────────────
-
   syncActiveStates() {
     const editor = this._getEditor();
     if (!editor) return;
 
-    // Make sure events are bound once the editor is available
     this._tryBindEditorEvents();
 
     const linkIsActive = editor.isActive('link');
 
-    const canIndent  = this._canIndent(editor);
-    const canOutdent = this._canOutdent(editor);
-
-    if (DEBUG) {
-      const { from, to } = editor.state.selection;
-      console.groupCollapsed('[Toolbar] syncActiveStates');
-      console.debug('selection:', { from, to, empty: editor.state.selection.empty });
-      console.debug('isActive:', {
-        bulletList: editor.isActive('bulletList'),
-        orderedList: editor.isActive('orderedList'),
-        link: linkIsActive,
-      });
-      console.debug('can:', { indent: canIndent, outdent: canOutdent });
-      console.groupEnd();
-    }
-
     this._buttons.forEach((btn) => {
       const command = btn.dataset.command;
 
-      // Unlink visibility follows link active state
       if (command === 'unlink') {
         const wasHidden = btn.classList.contains('wysiwyg-hidden');
         btn.classList.toggle('wysiwyg-hidden', !linkIsActive);
@@ -313,26 +278,7 @@ export class Toolbar {
         return;
       }
 
-      // Indent: enable/disable only
-      /*
-      if (command === 'indent') {
-        const can = canIndent;
-        btn.disabled = !can;
-        btn.setAttribute('aria-disabled', String(!can));
-        return;
-      }
-
-      // Outdent: enable/disable only
-      if (command === 'outdent') {
-        const can = canOutdent;
-        btn.disabled = !can;
-        btn.setAttribute('aria-disabled', String(!can));
-        return;
-      }
-        */
-
-      // Active states for other buttons
-      const checker  = ACTIVE_CHECKERS[command];
+      const checker = ACTIVE_CHECKERS[command];
       const isActive = checker ? checker(editor) : false;
       btn.classList.toggle('active', isActive);
       btn.setAttribute('aria-pressed', String(isActive));
@@ -340,8 +286,6 @@ export class Toolbar {
 
     this._updateTabindex();
   }
-
-  // ── Helpers: listItem type & can checks ─────────────────────────────────────
 
   _getListItemType(editor) {
     const nodes = editor?.schema?.nodes || {};
@@ -354,8 +298,7 @@ export class Toolbar {
     try {
       const li = this._getListItemType(editor);
       return editor.can().chain().focus().sinkListItem(li).run();
-    } catch (err) {
-      tlog('canIndent error:', err);
+    } catch {
       return false;
     }
   }
@@ -364,16 +307,14 @@ export class Toolbar {
     try {
       const li = this._getListItemType(editor);
       return editor.can().chain().focus().liftListItem(li).run();
-    } catch (err) {
-      tlog('canOutdent error:', err);
+    } catch {
       return false;
     }
   }
 
-  // ── Focus management when a button becomes unusable ─────────────────────────
-
   _focusNextUsable(fromBtn) {
-    const isUsable = (b) => !b.classList.contains('wysiwyg-hidden') && !b.disabled;
+    const isUsable = (b) =>
+      !b.classList.contains('wysiwyg-hidden') && !b.disabled;
 
     const idxAll = this._buttons.indexOf(fromBtn);
     let next = null;
@@ -388,32 +329,22 @@ export class Toolbar {
     }
 
     if (next) {
-      tlog('Focus moved to button:', next.dataset.command);
       next.focus();
       this._index = this._visibleButtons().indexOf(next);
       this._updateTabindex();
     } else {
-      const editor = this._getEditor?.();
-      tlog('No usable buttons left, focusing editor');
-      editor?.commands?.focus?.();
+      this._getEditor?.()?.commands?.focus?.();
     }
   }
-
-  // ── Public ───────────────────────────────────────────────────────────────────
 
   get el() { return this._el; }
 
   destroy() {
-    if (this._unsubs?.length) {
-      this._unsubs.forEach((off) => {
-        try { off(); } catch {}
-      });
-    }
+    this._unsubs.forEach((off) => { try { off(); } catch {} });
     this._unsubs = [];
     this._editorBound = false;
-
     this._el?.remove();
-    this._el     = null;
     this._buttons = [];
+    this._el = null;
   }
 }

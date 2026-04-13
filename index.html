@@ -1,9 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Accessible WYSIWYG Editor</title>
+  <link rel="stylesheet" href="https://www.canada.ca/etc/designs/canada/wet-boew/css/theme.min.css">
+<script src="https://www.canada.ca/etc/designs/canada/wet-boew/js/theme.min.js"></script>
+<link rel="stylesheet" href="https://wet-boew.github.io/wet-boew/dist/css/wet-boew.min.css">
+<script src="https://wet-boew.github.io/wet-boew/dist/js/wet-boew.min.js"></script>
+<script src="https://wet-boew.github.io/wet-boew/dist/js/deps/jquery.validate.min.js"></script>
+
 </head>
 <body>
   <div id="root"></div>
@@ -11,7 +17,8 @@
   <script type="module">
     import { WYSIWYGEditor } from './dist/index.js';
     new WYSIWYGEditor({
-      container: document.querySelector('#root')
+      container: document.querySelector('#root'),
+      language: 'fr'
     });
   </script>
 </body>

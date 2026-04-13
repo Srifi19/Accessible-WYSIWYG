@@ -99,15 +99,19 @@ const NormalizeTabInList = Extension.create({
 })
 
 export class EditorCore {
-  constructor({ mount, initialContent = '', onTransaction } = {}) {
+  constructor({ mount, initialContent = '', onTransaction, language = 'en' } = {}) {
     if (!mount) {
       throw new Error('EditorCore: `mount` element is required')
     }
 
     this._onTransaction = onTransaction
+    this._language = language
 
     this._editorId = 'wysiwyg-editor-' + Math.random().toString(36).slice(2, 7)
     mount.id = this._editorId
+
+    // Optional: reinforce language on the mount element
+    mount.setAttribute('lang', this._language)
 
     this._editor = new Editor({
       element: mount,
@@ -157,7 +161,6 @@ export class EditorCore {
       },
     })
 
-    // Markdown parser/serializer bound to THIS editor's schema
     const schema = this._editor.schema
     this._markdownParser = createMarkdownParser(schema)
     this._markdownSerializer = createMarkdownSerializer(schema)
@@ -196,3 +199,4 @@ export class EditorCore {
     this._editor.commands.setContent(doc.toJSON())
   }
 }
+
