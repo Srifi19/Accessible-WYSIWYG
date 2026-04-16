@@ -88,7 +88,7 @@ export class LinkPopup {
         <h2 id="wysiwyg-link-popup-title"></h2>
 
         <label for="wysiwyg-link-url" class="wysiwyg-label-strong">
-          <span class="wysiwyg-url-label"></span>
+          <strong><span class="wysiwyg-url-label"></span></strong>
           <span class="wysiwyg-field-hint wysiwyg-url-hint"></span>
         </label>
         <input
@@ -101,7 +101,7 @@ export class LinkPopup {
         <span id="wysiwyg-link-url-error" class="wysiwyg-field-error" aria-live="polite"></span>
 
         <label for="wysiwyg-link-display" class="wysiwyg-label-strong">
-          <span class="wysiwyg-text-label"></span>
+          <strong><span class="wysiwyg-text-label"></span></strong>
         </label>
         <input
           type="text"

@@ -40,6 +40,7 @@ export class WYSIWYGEditor {
     this._core = new EditorCore({
       mount:          editorMount,
       initialContent,
+      language:       this._language,
       onTransaction:  () => this._handleTransaction(),
     });
 

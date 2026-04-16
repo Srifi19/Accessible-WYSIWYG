@@ -3,6 +3,19 @@ import StarterKit from '@tiptap/starter-kit'
 import { Link } from '@tiptap/extension-link'
 import { createMarkdownParser, createMarkdownSerializer } from './markdown.js'
 
+const UI_TEXT = {
+  en: {
+    ariaLabel: 'Text editor',
+    ariaDescription: 'Rich text editor. Use the toolbar above to format text.',
+    mountRequired: 'EditorCore: `mount` element is required',
+  },
+  fr: {
+    ariaLabel: 'Éditeur de texte',
+    ariaDescription: 'Éditeur de texte enrichi. Utilisez la barre d’outils ci-dessus pour formater le texte.',
+    mountRequired: 'EditorCore : l’élément `mount` est requis',
+  },
+}
+
 const FOCUSABLE_SELECTOR = [
   'a[href]',
   'button:not([disabled])',
@@ -101,7 +114,7 @@ const NormalizeTabInList = Extension.create({
 export class EditorCore {
   constructor({ mount, initialContent = '', onTransaction, language = 'en' } = {}) {
     if (!mount) {
-      throw new Error('EditorCore: `mount` element is required')
+      throw new Error(UI_TEXT[language]?.mountRequired || UI_TEXT.en.mountRequired)
     }
 
     this._onTransaction = onTransaction
@@ -110,7 +123,6 @@ export class EditorCore {
     this._editorId = 'wysiwyg-editor-' + Math.random().toString(36).slice(2, 7)
     mount.id = this._editorId
 
-    // Optional: reinforce language on the mount element
     mount.setAttribute('lang', this._language)
 
     this._editor = new Editor({
@@ -138,7 +150,7 @@ export class EditorCore {
         attributes: {
           role: 'textbox',
           'aria-multiline': 'true',
-          'aria-label': 'Text editor',
+          'aria-label': UI_TEXT[language]?.ariaLabel || UI_TEXT.en.ariaLabel,
           'aria-describedby': 'wysiwyg-editor-hint',
         },
 
@@ -174,7 +186,8 @@ export class EditorCore {
     const hint = document.createElement('span')
     hint.id = 'wysiwyg-editor-hint'
     hint.className = 'wysiwyg-visually-hidden'
-    hint.textContent = 'Rich text editor. Use the toolbar above to format text.'
+    hint.textContent =
+      UI_TEXT[this._language]?.ariaDescription || UI_TEXT.en.ariaDescription
 
     mount.parentElement?.insertBefore(hint, mount)
   }
@@ -199,4 +212,3 @@ export class EditorCore {
     this._editor.commands.setContent(doc.toJSON())
   }
 }
-

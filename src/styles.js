@@ -314,6 +314,9 @@ body.wysiwyg-no-scroll { overflow: hidden; }
   .wysiwyg-toolbar-btn:focus {
     outline: 3px solid Highlight;
     outline-offset: 1px;
+        background: Highlight;
+    color: HighlightText;
+    border-color: HighlightText;
   }
   .wysiwyg-toolbar-btn.active {
     background-color: ButtonText;
@@ -368,6 +371,14 @@ body.wysiwyg-no-scroll { overflow: hidden; }
 .wysiwyg-link-apply:hover { background: Highlight; color: HighlightText; border-color: HighlightText; }
 
 .wysiwyg-link-cancel:hover {
+  background: Highlight;
+  color: HighlightText;
+  border-color: HighlightText;
+}
+
+.wysiwyg-link-apply:focus { background: Highlight; color: HighlightText; border-color: HighlightText; }
+
+.wysiwyg-link-cancel:focus {
   background: Highlight;
   color: HighlightText;
   border-color: HighlightText;
