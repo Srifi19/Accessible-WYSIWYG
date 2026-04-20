@@ -1,6 +1,34 @@
 const STYLE_ID = 'wysiwyg-editor-styles';
 
 const CSS = /* css */ `
+:host {
+  all: initial;
+  font-family: sans-serif;
+  color: #000;
+}
+
+/* Reset only inherited properties */
+:host * {
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+.wysiwyg-container strong,
+.wysiwyg-container b {
+  font-weight: 700;
+  color: #111;
+}
+
+.wysiwyg-container em,
+.wysiwyg-container i {
+  font-style: italic;
+}
+
+
+
+
 /* ---- Reset ---- */
 .wysiwyg-container * {
   box-sizing: border-box;
@@ -26,7 +54,6 @@ const CSS = /* css */ `
 /* ---- Outer wrapper ---- */
 .wysiwyg-container {
   background: #fff;
-  /* 37652: border was #d1d1d1 (~1.6:1 on white) — now #767676 (4.5:1) */
   border: 2px solid #767676;
   border-radius: 4px;
   overflow: hidden;
@@ -47,7 +74,7 @@ const CSS = /* css */ `
 .wysiwyg-toolbar-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
-  pointer-events: none; /* optional — keeps tooltip visible if removed */
+  pointer-events: none;
 }
   
 .wysiwyg-toolbar-btn {
@@ -91,8 +118,6 @@ const CSS = /* css */ `
 .wysiwyg-toolbar-btn svg {
   pointer-events: none;
 }
-
-
 
 /* ---- ProseMirror / Tiptap surface ---- */
 .wysiwyg-container .tiptap,
@@ -176,7 +201,6 @@ const CSS = /* css */ `
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  /* 37655: allow scroll on small viewports */
   overflow-y: auto;
   padding: 1rem;
 }
@@ -192,7 +216,6 @@ const CSS = /* css */ `
   box-shadow: 0 4px 20px rgba(0,0,0,.3);
   width: 100%;
   max-width: 480px;
-  /* 37655: don't constrain height so it reflows at 400% zoom */
 }
 .wysiwyg-link-popup-content h2 {
   font-size: 1.25rem;
@@ -205,7 +228,6 @@ const CSS = /* css */ `
   color: #1a1a1a;
 }
 
-/* 37656: format hint text under label */
 .wysiwyg-field-hint {
   display: block;
   font-size: 0.875rem;
@@ -217,7 +239,6 @@ const CSS = /* css */ `
 .wysiwyg-link-popup-content input {
   width: 100%;
   padding: .75rem;
-  /* 37652: input border #d1d1d1 failed — now #767676 */
   border: 2px solid #767676;
   border-radius: 4px;
   font-size: 1rem;
@@ -229,18 +250,13 @@ const CSS = /* css */ `
   border-color: #0066cc;
 }
 
-/* 37653/54: visible error text */
 .wysiwyg-field-error {
   display: block;
   color: #cc0000;
   font-size: 0.875rem;
   font-weight: 500;
   margin-bottom: .75rem;
-  /* icon prefix to not rely on color alone */
 }
-.wysiwyg-field-error:not([hidden])::before {
-}
-
 .wysiwyg-input-invalid {
   border-color: #cc0000 !important;
 }
@@ -252,7 +268,6 @@ const CSS = /* css */ `
   display: flex;
   gap: .75rem;
   justify-content: flex-end;
-  /* 37655: wrap on tiny screens */
   flex-wrap: wrap;
   margin-top: 1rem;
 }
@@ -265,7 +280,6 @@ const CSS = /* css */ `
   cursor: pointer;
   font-weight: 500;
   transition: background .15s;
-  /* 37655: allow buttons to grow on narrow viewports */
   flex: 1 1 auto;
   min-width: 80px;
   text-align: center;
@@ -284,9 +298,7 @@ const CSS = /* css */ `
 .wysiwyg-link-apply:hover  { background: #0052a3; }
 .wysiwyg-link-apply:focus  { outline: 2px solid #003d7a; outline-offset: 2px; }
 
-/* ---- Body scroll lock ---- */
-body.wysiwyg-no-scroll { overflow: hidden; }
-
+/* body scroll lock is global; keep it in page CSS or inject separately */
 @media (max-width: 640px) {
   .wysiwyg-link-popup-content {
     padding: 1.25rem;
@@ -314,7 +326,7 @@ body.wysiwyg-no-scroll { overflow: hidden; }
   .wysiwyg-toolbar-btn:focus {
     outline: 3px solid Highlight;
     outline-offset: 1px;
-        background: Highlight;
+    background: Highlight;
     color: HighlightText;
     border-color: HighlightText;
   }
@@ -328,14 +340,12 @@ body.wysiwyg-no-scroll { overflow: hidden; }
     fill: currentColor;
     stroke: currentColor;
   }
-
   .wysiwyg-toolbar-btn.active svg {
     fill: ButtonFace;
     color: ButtonFace;
     stroke: ButtonFace;
   }
 
-  /* Editor surface */
   .wysiwyg-container {
     border-color: ButtonText;
   }
@@ -348,7 +358,7 @@ body.wysiwyg-no-scroll { overflow: hidden; }
   .wysiwyg-container .ProseMirror:focus {
     outline: 3px solid Highlight;
   }
-  /* Link popup */
+
   .wysiwyg-link-popup {
     background: Canvas;
   }
@@ -365,25 +375,11 @@ body.wysiwyg-no-scroll { overflow: hidden; }
   }
 
   .wysiwyg-link-cancel { background: ButtonFace; color: ButtonText; border: 2px solid ButtonText; forced-color-adjust: none; }
-
-.wysiwyg-link-apply { background: ButtonText; color: ButtonFace; border: 2px solid ButtonFace; forced-color-adjust: none; }
-
-.wysiwyg-link-apply:hover { background: Highlight; color: HighlightText; border-color: HighlightText; }
-
-.wysiwyg-link-cancel:hover {
-  background: Highlight;
-  color: HighlightText;
-  border-color: HighlightText;
-}
-
-.wysiwyg-link-apply:focus { background: Highlight; color: HighlightText; border-color: HighlightText; }
-
-.wysiwyg-link-cancel:focus {
-  background: Highlight;
-  color: HighlightText;
-  border-color: HighlightText;
-}
-
+  .wysiwyg-link-apply { background: ButtonText; color: ButtonFace; border: 2px solid ButtonFace; forced-color-adjust: none; }
+  .wysiwyg-link-apply:hover { background: Highlight; color: HighlightText; border-color: HighlightText; }
+  .wysiwyg-link-cancel:hover { background: Highlight; color: HighlightText; border-color: HighlightText; }
+  .wysiwyg-link-apply:focus { background: Highlight; color: HighlightText; border-color: HighlightText; }
+  .wysiwyg-link-cancel:focus { background: Highlight; color: HighlightText; border-color: HighlightText; }
 
   .wysiwyg-input-invalid {
     border-color: LinkText !important;
@@ -397,10 +393,12 @@ body.wysiwyg-no-scroll { overflow: hidden; }
 }
 `;
 
-export function injectStyles() {
-  if (document.getElementById(STYLE_ID)) return;
+export function injectStyles(root) {
+  const target = root instanceof ShadowRoot ? root : document.head;
+  if (target.getElementById && target.getElementById(STYLE_ID)) return;
+
   const style = document.createElement('style');
-  style.id          = STYLE_ID;
+  style.id = STYLE_ID;
   style.textContent = CSS;
-  document.head.appendChild(style);
+  target.appendChild(style);
 }
