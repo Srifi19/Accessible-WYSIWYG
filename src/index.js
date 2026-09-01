@@ -1,3 +1,7 @@
+/**
+ * WYSIWYGEditor — self-contained accessible rich-text editor built on Tiptap.
+ */
+
 import { injectStyles } from './styles.js';
 import { EditorCore }   from './editorCore.js';
 import { Toolbar }      from './toolbar.js';
@@ -9,38 +13,26 @@ export class WYSIWYGEditor {
     initialContent = '',
     onChange,
     plugins = [],
-    language = 'en',
+    language = 'en',        
   } = {}) {
 
-    if (
-      !container ||
-      !(container instanceof HTMLElement || container instanceof ShadowRoot)
-    ) {
-      throw new Error('WYSIWYGEditor: `container` must be an HTMLElement or ShadowRoot');
+    if (!container || !(container instanceof HTMLElement)) {
+      throw new Error('WYSIWYGEditor: `container` must be an HTMLElement');
     }
 
-    // container is either a ShadowRoot or a normal element
-    this._root = container;
+    injectStyles();
 
-    // Inject styles into the shadow root (or document head as fallback)
-    injectStyles(this._root);
-
-    // Internal wrapper inside the root so CSS can target `.wysiwyg-container`
-    const wrapper = document.createElement('div');
-    wrapper.className = 'wysiwyg-container';
-    this._container = wrapper;
-    this._root.appendChild(wrapper);
-
+    this._container = container;
+    this._container.classList.add('wysiwyg-container');
     this._onChange = onChange ?? null;
-    this._language = language;
-
+    this._language = language;  
     // Live region for screen reader announcements
     this._status = this._buildStatus();
     this._container.appendChild(this._status);
 
     // Editor mount point
     const editorMount = document.createElement('div');
-    editorMount.setAttribute('lang', this._language);
+    editorMount.setAttribute('lang', this._language);  
     this._editorMount = editorMount;
     this._container.appendChild(editorMount);
 
@@ -62,7 +54,7 @@ export class WYSIWYGEditor {
     // Toolbar
     this._toolbar = new Toolbar({
       container:     this._container,
-      language:      this._language,
+            language: this._language,
       getEditor:     () => this._core.editor,
       onLinkRequest: (btn) => this._linkPopup.open(btn),
       editorId:      this._core.editorId,
@@ -73,7 +65,7 @@ export class WYSIWYGEditor {
     plugins.forEach((p) => this._registerPlugin(p));
   }
 
-  // ── Internal ──────────────────────────────────────────────
+  // ── Internal ──────────────────────────────────────────────────────────────
 
   _handleTransaction() {
     this._toolbar.syncActiveStates();
@@ -111,11 +103,11 @@ export class WYSIWYGEditor {
     }
   }
 
-  // ── Public API ────────────────────────────────────────────
+  // ── Public API ────────────────────────────────────────────────────────────
 
-  getHTML()     { return this._core.getHTML(); }
-  getJSON()     { return this._core.getJSON(); }
-  getMarkdown() { return this._core.getMarkdown(); }
+  getHTML()        { return this._core.getHTML(); }
+  getJSON()        { return this._core.getJSON(); }
+  getMarkdown()    { return this._core.getMarkdown(); }
 
   setContent(html) {
     this._core.setContent(html);
@@ -130,24 +122,20 @@ export class WYSIWYGEditor {
   focus()       { this._core.focus(); }
   announce(msg) { this._announce(msg); }
 
+
   setLanguage(lang) {
     this._language = lang;
     if (this._editorMount) {
       this._editorMount.setAttribute('lang', lang);
     }
-    this._linkPopup?.setLanguage(lang);
-    this._toolbar?.setLanguage?.(lang);
   }
 
   destroy() {
     this._toolbar?.destroy();
     this._linkPopup?.destroy();
     this._core?.destroy();
-    if (this._root instanceof ShadowRoot) {
-      this._root.innerHTML = '';
-    } else {
-      this._root.innerHTML = '';
-    }
+    this._container.classList.remove('wysiwyg-container');
+    this._container.innerHTML = '';
   }
 
   // Expose internals for plugin authors
